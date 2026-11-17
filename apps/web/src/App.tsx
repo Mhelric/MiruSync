@@ -7,6 +7,8 @@ import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { HomePage } from './pages/HomePage';
 import { TrackerPage } from './pages/TrackerPage';
 import { MediaDetailPage } from './pages/MediaDetailPage';
+import { SearchPage } from './pages/SearchPage';
+import { PopularPage } from './pages/PopularPage';
 import { DesktopLayout } from './layouts/DesktopLayout';
 
 const queryClient = new QueryClient({
@@ -70,23 +72,11 @@ function AppRoutes() {
       />
       <Route
         path="/search"
-        element={
-          session ? (
-            <ComingSoonPage title="Search & Filters" phase="Phase 3" />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
+        element={session ? <SearchPage /> : <Navigate to="/" replace />}
       />
       <Route
         path="/popular"
-        element={
-          session ? (
-            <ComingSoonPage title="Popular & Seasonal" phase="Phase 3" />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
+        element={session ? <PopularPage /> : <Navigate to="/" replace />}
       />
       <Route
         path="/calendar"

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState, type ReactNode } from 'react';
+import { NavLink } from 'react-router-dom';
 import {
   BookOpen,
   Calendar,
@@ -18,11 +18,13 @@ import {
   useOnlineStatus,
   usePendingEditsSync,
 } from '@mirusync/core';
+import { CommandSearchModal } from '../components/CommandSearchModal';
 
 const NAV_ITEMS = [
   { to: '/home', label: 'Home', icon: Home },
   { to: '/anime', label: 'Anime', icon: Tv },
   { to: '/manga', label: 'Manga', icon: BookOpen },
+  { to: '/search', label: 'Search', icon: Search },
   { to: '/popular', label: 'Popular', icon: Flame },
   { to: '/calendar', label: 'Calendar', icon: Calendar },
   { to: '/news', label: 'News', icon: Newspaper },
@@ -38,7 +40,18 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
   const logoutWeb = useAuthStore((s) => s.logoutWeb);
   const online = useOnlineStatus();
   const pendingCount = usePendingEditsSync();
-  const navigate = useNavigate();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 flex">
@@ -99,7 +112,7 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
         <header className="h-14 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-20">
           <button
             type="button"
-            onClick={() => navigate('/search')}
+            onClick={() => setSearchOpen(true)}
             className="flex items-center gap-2.5 rounded-lg border border-slate-800 bg-slate-900/70 hover:border-slate-700 px-3 py-1.5 text-sm text-slate-400 w-72 justify-between transition-colors cursor-pointer"
           >
             <span className="flex items-center gap-2">
@@ -144,6 +157,8 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
 
         <main className="flex-1 p-6 max-w-7xl w-full mx-auto">{children}</main>
       </div>
+
+      <CommandSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }
