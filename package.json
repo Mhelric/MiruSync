@@ -8,10 +8,11 @@
     "dev:mobile": "pnpm --filter @mirusync/mobile dev",
     "build:web": "pnpm --filter @mirusync/web build",
     "build:mobile": "pnpm --filter @mirusync/mobile build",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck && tsc -p netlify/tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@netlify/functions": "^3.0.0",
+    "@types/node": "^22.0.0",
     "typescript": "^5.7.2"
   },
   "engines": {
