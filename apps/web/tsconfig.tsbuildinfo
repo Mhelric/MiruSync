@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/pages/authcallbackpage.tsx","./src/pages/homepage.tsx","./src/pages/welcomepage.tsx"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/editentrymodal.tsx","./src/components/mediacard.tsx","./src/layouts/desktoplayout.tsx","./src/pages/authcallbackpage.tsx","./src/pages/homepage.tsx","./src/pages/mediadetailpage.tsx","./src/pages/trackerpage.tsx","./src/pages/welcomepage.tsx"],"version":"5.9.3"}

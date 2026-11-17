@@ -1,53 +1,161 @@
-import { LogOut, CheckCircle2 } from 'lucide-react';
-import { useAuthStore } from '@mirusync/core';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { BookOpen, Tv } from 'lucide-react';
+import {
+  useAuthStore,
+  useDeleteEntry,
+  useMediaList,
+  useUpdateEntry,
+  type ListEntry,
+} from '@mirusync/core';
+import { DesktopLayout } from '../layouts/DesktopLayout';
+import { MediaCard } from '../components/MediaCard';
+import { EditEntryModal } from '../components/EditEntryModal';
 
 export function HomePage() {
   const session = useAuthStore((s) => s.session);
-  const logoutWeb = useAuthStore((s) => s.logoutWeb);
+  const { data: animeList, isLoading: animeLoading } = useMediaList('ANIME');
+  const { data: mangaList, isLoading: mangaLoading } = useMediaList('MANGA');
+  const updateEntry = useUpdateEntry();
+  const deleteEntry = useDeleteEntry();
+  const [editing, setEditing] = useState<ListEntry | null>(null);
 
-  if (!session) return null;
-
-  const { user, provider, supabaseJwt } = session;
+  const watching = (animeList ?? [])
+    .filter((e) => e.status === 'CURRENT' && !e.media.isAdult)
+    .slice(0, 5);
+  const reading = (mangaList ?? [])
+    .filter((e) => e.status === 'CURRENT' && !e.media.isAdult)
+    .slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 p-6">
-      <header className="max-w-5xl mx-auto flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/60 px-5 py-3.5">
-        <div className="flex items-center gap-3">
-          <span className="font-bold text-lg tracking-tight">MiruSync</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            {provider === 'mal' ? 'MyAnimeList' : 'AniList'} Connected
-          </span>
-        </div>
+    <DesktopLayout>
+      <div className="space-y-8">
+        {/* Greeting + Quick Stats */}
+        <section className="rounded-2xl border border-slate-800/80 bg-gradient-to-br from-slate-900/90 to-slate-900/40 p-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Welcome back, {session?.user.name}
+            </h1>
+            <p className="text-sm text-slate-400 mt-1">
+              Pick up right where you left off.
+            </p>
+          </div>
 
-        <div className="flex items-center gap-3">
-          {user.avatarUrl && (
-            <img
-              src={user.avatarUrl}
-              alt={user.name}
-              className="h-8 w-8 rounded-full object-cover border border-slate-700"
-            />
+          <div className="flex gap-4">
+            <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-2.5 text-center">
+              <div className="text-xl font-bold font-mono text-sky-400">
+                {animeList?.length ?? '—'}
+              </div>
+              <div className="text-[11px] text-slate-400">Anime Entries</div>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-2.5 text-center">
+              <div className="text-xl font-bold font-mono text-indigo-400">
+                {mangaList?.length ?? '—'}
+              </div>
+              <div className="text-[11px] text-slate-400">Manga Entries</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Continue Watching */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Tv className="h-4 w-4 text-sky-400" />
+              Continue Watching
+            </h2>
+            <Link to="/anime" className="text-xs text-sky-400 hover:underline">
+              View all anime →
+            </Link>
+          </div>
+
+          {animeLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="aspect-[3/4] rounded-xl bg-slate-900/80 border border-slate-800 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : watching.length === 0 ? (
+            <p className="text-sm text-slate-400">No anime currently watching.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {watching.map((entry) => (
+                <MediaCard
+                  key={entry.media.id}
+                  entry={entry}
+                  scoreFormat={session?.user.scoreFormat}
+                  onIncrement={(e) =>
+                    updateEntry.mutate({
+                      mediaId: e.media.id,
+                      type: 'ANIME',
+                      progress: e.progress + 1,
+                    })
+                  }
+                  onEdit={setEditing}
+                />
+              ))}
+            </div>
           )}
-          <span className="text-sm font-medium text-slate-200">{user.name}</span>
-          <button
-            type="button"
-            onClick={() => void logoutWeb()}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 hover:border-slate-600 bg-slate-800/80 hover:bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors cursor-pointer"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            Sign out
-          </button>
-        </div>
-      </header>
+        </section>
 
-      <main className="max-w-5xl mx-auto mt-8 rounded-2xl border border-slate-800 bg-slate-900/40 p-8">
-        <h2 className="text-xl font-semibold">Welcome back, {user.name}</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          Phase 1 authentication is active. Your normalized user ID is{' '}
-          <code className="font-mono text-sky-400">{user.id}</code>
-          {supabaseJwt ? ' with a signed Supabase JWT ready for live sync.' : '.'}
-        </p>
-      </main>
-    </div>
+        {/* Continue Reading */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-indigo-400" />
+              Continue Reading
+            </h2>
+            <Link to="/manga" className="text-xs text-indigo-400 hover:underline">
+              View all manga →
+            </Link>
+          </div>
+
+          {mangaLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="aspect-[3/4] rounded-xl bg-slate-900/80 border border-slate-800 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : reading.length === 0 ? (
+            <p className="text-sm text-slate-400">No manga currently reading.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {reading.map((entry) => (
+                <MediaCard
+                  key={entry.media.id}
+                  entry={entry}
+                  scoreFormat={session?.user.scoreFormat}
+                  onIncrement={(e) =>
+                    updateEntry.mutate({
+                      mediaId: e.media.id,
+                      type: 'MANGA',
+                      progress: e.progress + 1,
+                    })
+                  }
+                  onEdit={setEditing}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {editing && (
+        <EditEntryModal
+          entry={editing}
+          onClose={() => setEditing(null)}
+          onSave={(update) => updateEntry.mutate(update)}
+          onDelete={(mediaId) =>
+            deleteEntry.mutate({ mediaId, type: editing.media.type })
+          }
+        />
+      )}
+    </DesktopLayout>
   );
 }
