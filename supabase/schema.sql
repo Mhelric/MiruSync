@@ -72,3 +72,48 @@ create policy "Users can manage own push subscriptions"
 
 -- Enable Realtime for live cross-device settings sync
 alter publication supabase_realtime add table public.user_settings;
+
+-- Notifications & Followed Titles (Phase 6)
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id text not null references public.users(id) on delete cascade,
+  type text not null check (type in ('episode', 'chapter', 'premiere', 'news')),
+  title text not null,
+  body text not null,
+  media_id text,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.followed_titles (
+  id uuid primary key default gen_random_uuid(),
+  user_id text not null references public.users(id) on delete cascade,
+  media_id text not null,
+  media_type text not null check (media_type in ('ANIME', 'MANGA')),
+  al_id integer,
+  mal_id integer,
+  title text not null,
+  last_notified_ep integer default 0,
+  last_notified_chapter text,
+  created_at timestamptz not null default now(),
+  unique (user_id, media_id)
+);
+
+alter table public.notifications enable row level security;
+alter table public.followed_titles enable row level security;
+
+create policy "Users can view own notifications"
+  on public.notifications for select
+  using (auth.uid()::text = user_id);
+
+create policy "Users can update own notifications"
+  on public.notifications for update
+  using (auth.uid()::text = user_id);
+
+create policy "Users can manage own followed titles"
+  on public.followed_titles for all
+  using (auth.uid()::text = user_id)
+  with check (auth.uid()::text = user_id);
+
+alter publication supabase_realtime add table public.notifications;
+

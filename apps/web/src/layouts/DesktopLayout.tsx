@@ -17,8 +17,10 @@ import {
   useAuthStore,
   useOnlineStatus,
   usePendingEditsSync,
+  useSettingsSync,
 } from '@mirusync/core';
 import { CommandSearchModal } from '../components/CommandSearchModal';
+import { NotificationBell } from '../components/NotificationBell';
 
 const NAV_ITEMS = [
   { to: '/home', label: 'Home', icon: Home },
@@ -40,6 +42,10 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
   const logoutWeb = useAuthStore((s) => s.logoutWeb);
   const online = useOnlineStatus();
   const pendingCount = usePendingEditsSync();
+  useSettingsSync(
+    import.meta.env.VITE_SUPABASE_URL || '',
+    import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+  );
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -133,6 +139,8 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
                   : `Syncing ${pendingCount} queued edit${pendingCount > 1 ? 's' : ''}…`}
               </span>
             )}
+
+            <NotificationBell />
 
             {session?.user.avatarUrl && (
               <img

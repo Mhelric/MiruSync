@@ -5,3 +5,5 @@ export * from './storage/db';
 export * from './hooks/useList';
 export * from './hooks/useDiscover';
 export * from './hooks/useScheduleAndNews';
+export * from './hooks/useSettingsSync';
+export * from './hooks/useNotifications';
