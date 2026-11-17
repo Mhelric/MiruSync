@@ -11,7 +11,9 @@ import { SearchPage } from './pages/SearchPage';
 import { PopularPage } from './pages/PopularPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { NewsPage } from './pages/NewsPage';
-import { DesktopLayout } from './layouts/DesktopLayout';
+import { ProfilePage } from './pages/ProfilePage';
+import { SettingsPage } from './pages/SettingsPage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,22 +23,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-function ComingSoonPage({ title, phase }: { title: string; phase: string }) {
-  return (
-    <DesktopLayout>
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-10 text-center">
-        <span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-mono text-sky-400">
-          {phase}
-        </span>
-        <h1 className="mt-4 text-2xl font-bold">{title}</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          This section is scheduled for {phase}.
-        </p>
-      </div>
-    </DesktopLayout>
-  );
-}
 
 function AppRoutes() {
   const session = useAuthStore((s) => s.session);
@@ -90,24 +76,13 @@ function AppRoutes() {
       />
       <Route
         path="/profile"
-        element={
-          session ? (
-            <ComingSoonPage title="Profile & Stats" phase="Phase 7" />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
+        element={session ? <ProfilePage /> : <Navigate to="/" replace />}
       />
       <Route
         path="/settings"
-        element={
-          session ? (
-            <ComingSoonPage title="Settings & Sync" phase="Phase 7" />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
+        element={session ? <SettingsPage /> : <Navigate to="/" replace />}
       />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

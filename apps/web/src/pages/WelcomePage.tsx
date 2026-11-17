@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Sparkles, ShieldCheck, RefreshCw } from 'lucide-react';
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
@@ -58,6 +58,12 @@ export function WelcomePage() {
             <ShieldCheck className="h-3.5 w-3.5 text-sky-400 shrink-0" />
             <span>Official OAuth2</span>
           </div>
+        </div>
+
+        <div className="mt-4 text-center">
+          <Link to="/privacy" className="text-[11px] text-slate-500 hover:text-slate-300 underline">
+            Privacy Policy
+          </Link>
         </div>
       </div>
     </main>
