@@ -9,6 +9,8 @@ import { TrackerPage } from './pages/TrackerPage';
 import { MediaDetailPage } from './pages/MediaDetailPage';
 import { SearchPage } from './pages/SearchPage';
 import { PopularPage } from './pages/PopularPage';
+import { CalendarPage } from './pages/CalendarPage';
+import { NewsPage } from './pages/NewsPage';
 import { DesktopLayout } from './layouts/DesktopLayout';
 
 const queryClient = new QueryClient({
@@ -80,23 +82,11 @@ function AppRoutes() {
       />
       <Route
         path="/calendar"
-        element={
-          session ? (
-            <ComingSoonPage title="Release Calendar" phase="Phase 4" />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
+        element={session ? <CalendarPage /> : <Navigate to="/" replace />}
       />
       <Route
         path="/news"
-        element={
-          session ? (
-            <ComingSoonPage title="Anime News" phase="Phase 4" />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
+        element={session ? <NewsPage /> : <Navigate to="/" replace />}
       />
       <Route
         path="/profile"
