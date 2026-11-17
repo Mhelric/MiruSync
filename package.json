@@ -1,0 +1,21 @@
+{
+  "name": "mirusync",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MiruSync — Unified Anime & Manga Tracker (MAL & AniList) for Desktop Web & Android",
+  "scripts": {
+    "dev:web": "pnpm --filter @mirusync/web dev",
+    "dev:mobile": "pnpm --filter @mirusync/mobile dev",
+    "build:web": "pnpm --filter @mirusync/web build",
+    "build:mobile": "pnpm --filter @mirusync/mobile build",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^3.0.0",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
