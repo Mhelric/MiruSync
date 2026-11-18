@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   BookOpen,
   Calendar,
+  Compass,
   Download,
   Flame,
   Home,
@@ -16,6 +17,7 @@ import {
   Tv,
   User,
   WifiOff,
+  X,
 } from 'lucide-react';
 import {
   useAuthStore,
@@ -60,6 +62,20 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [mobileDiscoverOpen, setMobileDiscoverOpen] = useState(false);
+
+  const isDiscoverRoute = [
+    '/popular',
+    '/calendar',
+    '/new-releases',
+    '/news',
+    '/search',
+    '/settings',
+  ].some((p) => location.pathname.startsWith(p));
+
+  useEffect(() => {
+    setMobileDiscoverOpen(false);
+  }, [location.pathname]);
 
   const activeNavIndex = NAV_ITEMS.findIndex((item) =>
     location.pathname.startsWith(item.to)
@@ -83,10 +99,10 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 flex">
-      {/* Hidable Left Sidebar */}
+    <div className="min-h-screen bg-slate-950 text-slate-50 flex overflow-x-hidden">
+      {/* Hidable Left Sidebar (Desktop) */}
       <aside
-        className={`shrink-0 border-r border-slate-800/80 bg-slate-900/40 flex flex-col justify-between p-3 sticky top-0 h-screen transition-all duration-300 ease-out ${
+        className={`hidden md:flex shrink-0 border-r border-slate-800/80 bg-slate-900/40 flex-col justify-between p-3 sticky top-0 h-screen transition-all duration-300 ease-out ${
           sidebarCollapsed ? 'w-16' : 'w-60'
         }`}
       >
@@ -199,25 +215,31 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
 
       {/* Main Content Column */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-3">
+        <header className="h-14 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur px-3 sm:px-6 flex items-center justify-between gap-2 sticky top-0 z-20">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <NavLink to="/home" className="md:hidden shrink-0" aria-label="MiruSync Home">
+              <MiruSyncLogo className="h-7 w-7" />
+            </NavLink>
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 hover:border-slate-700 px-3 py-1.5 text-sm text-slate-400 w-64 sm:w-72 justify-start transition-colors cursor-pointer"
+              className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 hover:border-slate-700 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm text-slate-400 w-auto sm:w-72 justify-start transition-colors cursor-pointer"
             >
-              <Search className="h-3.5 w-3.5" />
-              <span>Search anime &amp; manga…</span>
+              <Search className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate hidden sm:inline">Search anime &amp; manga…</span>
+              <span className="sm:hidden">Search…</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {(!online || pendingCount > 0) && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-300">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 sm:px-2.5 py-1 text-xs text-amber-300">
                 <WifiOff className="h-3.5 w-3.5" />
-                {!online
-                  ? 'Offline — edits queued'
-                  : `Syncing ${pendingCount} queued edit${pendingCount > 1 ? 's' : ''}…`}
+                <span className="hidden sm:inline">
+                  {!online
+                    ? 'Offline — edits queued'
+                    : `Syncing ${pendingCount} queued edit${pendingCount > 1 ? 's' : ''}…`}
+                </span>
               </span>
             )}
 
@@ -225,7 +247,7 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
 
             <NavLink
               to="/profile"
-              className="flex items-center gap-2 rounded-full border border-slate-800/80 bg-slate-900/60 hover:border-slate-700 pl-1.5 pr-2.5 py-1 transition-colors"
+              className="flex items-center gap-2 rounded-full border border-slate-800/80 bg-slate-900/60 hover:border-slate-700 pl-1.5 pr-2 sm:pr-2.5 py-1 transition-colors"
               title={`Signed in with ${session?.provider === 'mal' ? 'MyAnimeList' : 'AniList'}`}
             >
               {session?.user.avatarUrl ? (
@@ -259,8 +281,120 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-6 max-w-7xl w-full mx-auto">{children}</main>
+        <main className="flex-1 p-3 sm:p-6 pb-24 md:pb-6 max-w-7xl w-full mx-auto min-w-0">
+          {children}
+        </main>
       </div>
+
+      {/* Mobile Discover / More Sheet */}
+      {mobileDiscoverOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-30 bg-slate-950/65 backdrop-blur-xs"
+          onClick={() => setMobileDiscoverOpen(false)}
+        >
+          <div
+            className="fixed bottom-16 left-3 right-3 rounded-2xl border border-slate-800 bg-slate-900/95 p-4 shadow-2xl space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Discover &amp; More
+              </span>
+              <button
+                type="button"
+                onClick={() => setMobileDiscoverOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:text-slate-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { to: '/popular', label: 'Popular', icon: Flame },
+                { to: '/calendar', label: 'Calendar', icon: Calendar },
+                { to: '/new-releases', label: 'New Releases', icon: Sparkles },
+                { to: '/news', label: 'News', icon: Newspaper },
+                { to: '/search', label: 'Search', icon: Search },
+                { to: '/settings', label: 'Settings', icon: Settings },
+              ].map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-medium transition-colors ${
+                      isActive
+                        ? 'border-sky-500/40 bg-sky-500/15 text-sky-400'
+                        : 'border-slate-800 bg-slate-950/60 text-slate-200 hover:border-slate-700'
+                    }`
+                  }
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span>{label}</span>
+                </NavLink>
+              ))}
+            </div>
+
+            <a
+              href={APK_DOWNLOAD_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-2.5 text-xs font-medium text-emerald-400"
+            >
+              <Download className="h-4 w-4" />
+              Download Android APK
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Bottom Tab Bar (matches Android app UI) */}
+      <nav
+        aria-label="Mobile navigation"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 h-16 border-t border-slate-800/80 bg-slate-900/95 backdrop-blur-lg grid grid-cols-5 px-1"
+      >
+        {[
+          { to: '/home', label: 'Home', icon: Home },
+          { to: '/anime', label: 'Anime', icon: Tv },
+          { to: '/manga', label: 'Manga', icon: BookOpen },
+        ].map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+                isActive ? 'text-sky-400' : 'text-slate-400'
+              }`
+            }
+          >
+            <Icon className="h-5 w-5" />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => setMobileDiscoverOpen((prev) => !prev)}
+          className={`flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors cursor-pointer ${
+            mobileDiscoverOpen || isDiscoverRoute ? 'text-sky-400' : 'text-slate-400'
+          }`}
+        >
+          <Compass className="h-5 w-5" />
+          <span>Discover</span>
+        </button>
+
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+              isActive ? 'text-sky-400' : 'text-slate-400'
+            }`
+          }
+        >
+          <User className="h-5 w-5" />
+          <span>Profile</span>
+        </NavLink>
+      </nav>
 
       <CommandSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
 

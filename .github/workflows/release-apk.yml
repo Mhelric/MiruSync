@@ -1,0 +1,74 @@
+name: Build and Release Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.1.0)'
+        required: true
+        default: 'v1.1.0'
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build mobile web bundle
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_APP_URL: https://mirusync.vercel.app
+        run: pnpm --filter @mirusync/mobile build
+
+      - name: Sync Capacitor Android
+        run: pnpm --filter @mirusync/mobile cap:sync
+
+      - name: Build Android APK
+        working-directory: apps/mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Prepare MiruSync.apk artifact
+        run: cp apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk MiruSync.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: MiruSync ${{ inputs.tag || github.ref_name }}
+          make_latest: true
+          files: MiruSync.apk
+          body: |
+            MiruSync Android APK release.
+            - Capacitor Local Notifications & Airing Today Home-Screen Widget
+            - Unified MyAnimeList & AniList tracker with offline queue
