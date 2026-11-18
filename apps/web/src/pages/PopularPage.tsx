@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   useMediaList,
   usePopularMedia,
@@ -18,9 +19,20 @@ const TABS: { key: PopularKind; label: string }[] = [
 ];
 
 export function PopularPage() {
-  const [type, setType] = useState<MediaType>('ANIME');
+  const [searchParams] = useSearchParams();
+  const initialType: MediaType =
+    searchParams.get('type')?.toUpperCase() === 'MANGA' ? 'MANGA' : 'ANIME';
+  const [type, setType] = useState<MediaType>(initialType);
   const [kind, setKind] = useState<PopularKind>('trending');
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const paramType = searchParams.get('type')?.toUpperCase();
+    if (paramType === 'MANGA' || paramType === 'ANIME') {
+      setType(paramType);
+      setPage(1);
+    }
+  }, [searchParams]);
 
   const { data: userList } = useMediaList(type);
   const updateEntry = useUpdateEntry();

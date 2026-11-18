@@ -8,12 +8,15 @@ import {
   useAuthStore,
   useDeleteEntry,
   useMediaList,
+  usePopularMedia,
   useSettingsStore,
   useUpdateEntry,
   type ListEntry,
+  type Media,
 } from '@mirusync/core';
 import { DesktopLayout } from '../layouts/DesktopLayout';
 import { MediaCard } from '../components/MediaCard';
+import { DiscoverCard } from '../components/DiscoverCard';
 import { EditEntryModal } from '../components/EditEntryModal';
 
 export function HomePage() {
@@ -21,6 +24,16 @@ export function HomePage() {
   const titleLang = useSettingsStore((s) => s.settings.title_language);
   const { data: animeList, isLoading: animeLoading } = useMediaList('ANIME');
   const { data: mangaList, isLoading: mangaLoading } = useMediaList('MANGA');
+  const { data: popularAnime, isLoading: popularAnimeLoading } = usePopularMedia(
+    'ANIME',
+    'trending',
+    1
+  );
+  const { data: popularManga, isLoading: popularMangaLoading } = usePopularMedia(
+    'MANGA',
+    'trending',
+    1
+  );
   const updateEntry = useUpdateEntry();
   const deleteEntry = useDeleteEntry();
   const [editing, setEditing] = useState<ListEntry | null>(null);
@@ -58,11 +71,36 @@ export function HomePage() {
     .filter((e) => e.status === 'CURRENT' && !e.media.isAdult)
     .slice(0, 5);
 
+  const animeListIds = useMemo(
+    () => new Set((animeList ?? []).map((e) => e.media.id)),
+    [animeList]
+  );
+  const mangaListIds = useMemo(
+    () => new Set((mangaList ?? []).map((e) => e.media.id)),
+    [mangaList]
+  );
+
+  const briefPopularAnime = (popularAnime?.items ?? [])
+    .filter((m) => !m.isAdult)
+    .slice(0, 5);
+  const briefPopularManga = (popularManga?.items ?? [])
+    .filter((m) => !m.isAdult)
+    .slice(0, 5);
+
+  function handleQuickAdd(media: Media) {
+    updateEntry.mutate({
+      mediaId: media.id,
+      type: media.type,
+      status: 'PLANNING',
+      progress: 0,
+    });
+  }
+
   return (
     <DesktopLayout>
       <div className="space-y-8">
         {/* Rotating Seasonal Trending Hero Banner + Greeting */}
-        <section className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/70 min-h-[240px] flex flex-col justify-between p-6 md:p-8 shadow-2xl">
+        <section className="hero-banner relative overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/70 min-h-[240px] flex flex-col justify-between p-6 md:p-8 shadow-2xl">
           {heroSlides.map((slide, idx) => (
             <img
               key={slide.id}
@@ -242,6 +280,79 @@ export function HomePage() {
                     })
                   }
                   onEdit={setEditing}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Popular Anime */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Flame className="h-4 w-4 text-sky-400" />
+              Popular Anime
+            </h2>
+            <Link to="/popular" className="text-xs text-sky-400 hover:underline">
+              Show more →
+            </Link>
+          </div>
+
+          {popularAnimeLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="aspect-[3/4] rounded-xl bg-slate-900/80 border border-slate-800 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {briefPopularAnime.map((media) => (
+                <DiscoverCard
+                  key={media.id}
+                  media={media}
+                  inList={animeListIds.has(media.id)}
+                  onQuickAdd={handleQuickAdd}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Popular Manga */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Flame className="h-4 w-4 text-indigo-400" />
+              Popular Manga
+            </h2>
+            <Link
+              to="/popular?type=manga"
+              className="text-xs text-indigo-400 hover:underline"
+            >
+              Show more →
+            </Link>
+          </div>
+
+          {popularMangaLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="aspect-[3/4] rounded-xl bg-slate-900/80 border border-slate-800 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {briefPopularManga.map((media) => (
+                <DiscoverCard
+                  key={media.id}
+                  media={media}
+                  inList={mangaListIds.has(media.id)}
+                  onQuickAdd={handleQuickAdd}
                 />
               ))}
             </div>

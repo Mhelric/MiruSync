@@ -19,23 +19,22 @@ export function MiruSyncLogo({ className = 'h-8 w-8' }: { className?: string }) 
         height="60"
         rx="14"
         stroke={`url(#${gradId})`}
-        strokeOpacity="0.4"
+        strokeOpacity="0.45"
         strokeWidth="2"
       />
       <path
-        d="M12 32C17.5 21.5 24.5 17 32 17C39.5 17 46.5 21.5 52 32C46.5 42.5 39.5 47 32 47C24.5 47 17.5 42.5 12 32Z"
-        stroke={`url(#${gradId})`}
-        strokeWidth="3.5"
+        d="M12 43V21L21 34L30 21V43"
+        stroke="#F8FAFC"
+        strokeWidth="5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="32" cy="32" r="8.5" stroke={`url(#${gradId})`} strokeWidth="3" />
-      <circle cx="32" cy="32" r="3.5" fill="#38bdf8" />
       <path
-        d="M46 15.5A19 19 0 0 1 51 22M18 48.5A19 19 0 0 1 13 42"
-        stroke="#38bdf8"
-        strokeWidth="2.5"
+        d="M51 23.5C50 21.5 47.8 20.5 44.8 20.5C41 20.5 38.5 22.5 38.5 25.5C38.5 28.5 41.2 30 44.8 31.2C48.8 32.5 51.5 34 51.5 37.5C51.5 41 48.5 43.2 44.5 43.2C41 43.2 38.6 41.8 37.5 39.5"
+        stroke={`url(#${gradId})`}
+        strokeWidth="5"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
