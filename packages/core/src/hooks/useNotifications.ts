@@ -61,29 +61,37 @@ export function useNotifications(
         ? getSupabaseClient(supabaseUrl, supabaseAnonKey, session.supabaseJwt)
         : null;
 
-    const channel = client
-      ?.channel(`notifications:${session.user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${session.user.id}`,
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const next = payload.new as AppNotification;
-            setItems((prev) => [next, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            const updated = payload.new as AppNotification;
-            setItems((prev) =>
-              prev.map((item) => (item.id === updated.id ? updated : item))
-            );
-          }
-        }
-      )
-      .subscribe();
+    let channel: ReturnType<NonNullable<typeof client>['channel']> | undefined;
+    if (client) {
+      try {
+        const suffix = Math.random().toString(36).slice(2, 9);
+        channel = client
+          .channel(`notifications:${session.user.id}:${suffix}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${session.user.id}`,
+            },
+            (payload) => {
+              if (payload.eventType === 'INSERT') {
+                const next = payload.new as AppNotification;
+                setItems((prev) => [next, ...prev]);
+              } else if (payload.eventType === 'UPDATE') {
+                const updated = payload.new as AppNotification;
+                setItems((prev) =>
+                  prev.map((item) => (item.id === updated.id ? updated : item))
+                );
+              }
+            }
+          )
+          .subscribe();
+      } catch {
+        // Realtime is optional; /api/user-sync still handles reads/writes
+      }
+    }
 
     return () => {
       cancelled = true;
