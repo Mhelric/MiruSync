@@ -104,7 +104,7 @@ export function WelcomePage() {
             <img
               src={scene.gifUrl}
               alt={scene.title}
-              className="h-full w-full object-cover blur-[3px] scale-105"
+              className="h-full w-full object-cover scale-105"
             />
           </div>
         ))}
@@ -120,7 +120,7 @@ export function WelcomePage() {
 
       <div className="relative z-10 max-w-md w-full flex flex-col gap-4">
         {/* Glassmorphism Sign-In Card */}
-        <div className="w-full rounded-3xl backdrop-blur-2xl bg-slate-900/45 border border-white/15 p-8 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.8)] transition-all duration-500">
+        <div className="w-full rounded-3xl overflow-hidden backdrop-blur-md bg-slate-900/65 border border-white/15 p-8 shadow-2xl transition-colors duration-500">
           <div className="flex items-center gap-3 mb-5">
             <MiruSyncLogo className="h-10 w-10 shadow-lg shadow-sky-500/20" />
             <div className="text-xl font-bold tracking-tight text-white">
@@ -165,7 +165,7 @@ export function WelcomePage() {
         </div>
 
         {/* Separate Glassmorphism Download APK Box */}
-        <div className="w-full rounded-2xl backdrop-blur-2xl bg-slate-900/45 border border-white/15 p-5 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.8)] space-y-3">
+        <div className="w-full rounded-2xl overflow-hidden backdrop-blur-md bg-slate-900/65 border border-white/15 p-5 shadow-2xl space-y-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <div className="h-7 w-7 rounded-lg bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center shrink-0">
