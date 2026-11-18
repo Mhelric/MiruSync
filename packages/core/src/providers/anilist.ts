@@ -788,6 +788,7 @@ export class AniListProvider implements MediaProvider {
         $search: String
         $type: MediaType!
         $genre: String
+        $tag: String
         $seasonYear: Int
         $season: MediaSeason
         $format: MediaFormat
@@ -804,6 +805,7 @@ export class AniListProvider implements MediaProvider {
             search: $search
             type: $type
             genre: $genre
+            tag: $tag
             seasonYear: $seasonYear
             season: $season
             format: $format
@@ -821,6 +823,7 @@ export class AniListProvider implements MediaProvider {
         search: query || undefined,
         type: filters.type,
         genre: filters.genre || undefined,
+        tag: filters.tag || undefined,
         seasonYear: filters.year || undefined,
         season: filters.season || undefined,
         format: filters.format || undefined,

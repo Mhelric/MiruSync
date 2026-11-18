@@ -31,6 +31,24 @@ const GENRES = [
 ];
 
 const SEASONS = ['WINTER', 'SPRING', 'SUMMER', 'FALL'];
+const POPULAR_TAGS = [
+  'Isekai',
+  'Time Travel',
+  'Reincarnation',
+  'Found Family',
+  'Anti-Hero',
+  'Magic',
+  'Swordplay',
+  'Cyberpunk',
+  'Post-Apocalyptic',
+  'School',
+  'Survival',
+  'Parody',
+  'Shounen',
+  'Seinen',
+  'Shoujo',
+  'Josei',
+];
 const ANIME_FORMATS = ['TV', 'MOVIE', 'OVA', 'ONA', 'SPECIAL'];
 const MANGA_FORMATS = ['MANGA', 'NOVEL', 'ONE_SHOT'];
 const STATUSES = [
@@ -49,6 +67,7 @@ export function SearchPage() {
   const [type, setType] = useState<MediaType>('ANIME');
   const [query, setQuery] = useState('');
   const [genre, setGenre] = useState('');
+  const [tag, setTag] = useState('');
   const [year, setYear] = useState('');
   const [season, setSeason] = useState('');
   const [format, setFormat] = useState('');
@@ -72,6 +91,7 @@ export function SearchPage() {
   const { data, isFetching, isError } = useMediaSearch(query, {
     type,
     genre: genre || undefined,
+    tag: tag.trim() || undefined,
     year: year ? Number(year) : undefined,
     season: type === 'ANIME' && season ? season : undefined,
     format: format || undefined,
@@ -100,7 +120,7 @@ export function SearchPage() {
   }
 
   const hasFilters = Boolean(
-    query.trim() || genre || year || season || format || status || minScore
+    query.trim() || genre || tag.trim() || year || season || format || status || minScore
   );
 
   const formatOptions = type === 'ANIME' ? ANIME_FORMATS : MANGA_FORMATS;
@@ -199,7 +219,23 @@ export function SearchPage() {
         </div>
 
         {/* Secondary Filters */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              list="mirusync-popular-tags"
+              value={tag}
+              onChange={(e) => setTag(e.target.value)}
+              placeholder="Tag (e.g. Isekai)"
+              className="w-full rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500"
+            />
+            <datalist id="mirusync-popular-tags">
+              {POPULAR_TAGS.map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
+          </div>
+
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}

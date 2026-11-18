@@ -36,6 +36,7 @@ export function useMediaSearch(
       provider &&
         (debouncedQuery.length > 0 ||
           filters.genre ||
+          filters.tag ||
           filters.year ||
           filters.season ||
           filters.format ||

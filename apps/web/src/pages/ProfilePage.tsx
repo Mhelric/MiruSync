@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import {
   BookOpen,
   LogOut,
-  Settings,
   Sparkles,
   Star,
   Tv,
@@ -760,7 +759,7 @@ export function ProfilePage() {
               </div>
             </div>
 
-            {/* Live Activity Status + Settings */}
+            {/* Live Activity Status */}
             <div className="flex flex-wrap items-center gap-2.5">
               <div className="inline-flex items-center gap-2.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs text-emerald-300">
                 <span className="relative flex h-2 w-2 shrink-0">
@@ -774,14 +773,6 @@ export function ProfilePage() {
                   </span>
                 )}
               </div>
-
-              <Link
-                to="/settings"
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/80 hover:border-slate-600 px-3.5 py-2 text-xs font-medium text-slate-200 transition-colors"
-              >
-                <Settings className="h-3.5 w-3.5" />
-                Settings
-              </Link>
             </div>
           </div>
         </section>
@@ -814,7 +805,7 @@ export function ProfilePage() {
               {stats.chaptersRead}
             </div>
           </div>
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+          <div className="col-span-2 md:col-span-1 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <Star className="h-3.5 w-3.5 text-amber-400" />
               Mean Score

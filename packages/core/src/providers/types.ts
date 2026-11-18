@@ -141,6 +141,7 @@ export type SearchSort = 'POPULARITY_DESC' | 'SCORE_DESC' | 'START_DATE_DESC';
 export interface SearchFilters {
   type: MediaType;
   genre?: string;
+  tag?: string;
   year?: number;
   season?: string;
   format?: string;

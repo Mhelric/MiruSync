@@ -13,6 +13,7 @@ import {
   Star,
   TrendingUp,
   Users,
+  X,
 } from 'lucide-react';
 import {
   formatCountdown,
@@ -48,6 +49,9 @@ export function MediaDetailPage() {
   const [showSpoilerTags, setShowSpoilerTags] = useState(false);
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
   const [showAltTitles, setShowAltTitles] = useState(false);
+  const [showTagsMobile, setShowTagsMobile] = useState(false);
+  const [showLinksMobile, setShowLinksMobile] = useState(false);
+  const [detailModal, setDetailModal] = useState<'relations' | 'characters' | null>(null);
 
   const existingEntry: ListEntry | undefined = list?.find(
     (e) => e.media.id === id || (media?.alId && e.media.alId === media.alId) || (media?.malId && e.media.malId === media.malId)
@@ -190,22 +194,39 @@ export function MediaDetailPage() {
 
         const tagsBlock =
           media.tags && media.tags.length > 0 ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-mono uppercase text-slate-400">
-                  Tags
-                </h2>
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3.5 md:rounded-none md:border-0 md:bg-transparent md:p-0 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTagsMobile((v) => !v)}
+                  className="md:pointer-events-none flex flex-1 items-center justify-between text-xs font-mono uppercase text-slate-400 cursor-pointer md:cursor-default"
+                >
+                  <span>Tags ({visibleTags.length})</span>
+                  <span className="md:hidden">
+                    {showTagsMobile ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </span>
+                </button>
                 {media.tags.some((t) => t.isSpoiler) && (
                   <button
                     type="button"
                     onClick={() => setShowSpoilerTags((s) => !s)}
-                    className="text-[11px] text-sky-400 hover:underline cursor-pointer"
+                    className={`${
+                      showTagsMobile ? 'inline-block' : 'hidden md:inline-block'
+                    } text-[11px] text-sky-400 hover:underline cursor-pointer`}
                   >
-                    {showSpoilerTags ? 'Hide spoiler tags' : 'Show spoiler tags'}
+                    {showSpoilerTags ? 'Hide spoilers' : 'Show spoilers'}
                   </button>
                 )}
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div
+                className={`${
+                  showTagsMobile ? 'flex' : 'hidden md:flex'
+                } flex-wrap gap-1.5`}
+              >
                 {visibleTags.slice(0, 14).map((t) => (
                   <span
                     key={t.name}
@@ -225,11 +246,29 @@ export function MediaDetailPage() {
 
         const linksBlock =
           media.streamingLinks && media.streamingLinks.length > 0 ? (
-            <div>
-              <h2 className="text-xs font-mono uppercase text-slate-400 mb-2">
-                {type === 'ANIME' ? 'Where to Watch & Links' : 'External Links'}
-              </h2>
-              <div className="flex flex-wrap gap-2">
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3.5 md:rounded-none md:border-0 md:bg-transparent md:p-0 space-y-2.5">
+              <button
+                type="button"
+                onClick={() => setShowLinksMobile((v) => !v)}
+                className="md:pointer-events-none flex w-full items-center justify-between text-xs font-mono uppercase text-slate-400 cursor-pointer md:cursor-default"
+              >
+                <span>
+                  {type === 'ANIME' ? 'Where to Watch & Links' : 'External Links'} (
+                  {media.streamingLinks.length})
+                </span>
+                <span className="md:hidden">
+                  {showLinksMobile ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </span>
+              </button>
+              <div
+                className={`${
+                  showLinksMobile ? 'flex' : 'hidden md:flex'
+                } flex-wrap gap-2`}
+              >
                 {media.streamingLinks.map((link) => (
                   <a
                     key={link.url}
@@ -697,10 +736,19 @@ export function MediaDetailPage() {
           {/* Relations (Sequels, Prequels, Adaptations) */}
           {media.relations && media.relations.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-base font-semibold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-sky-400" />
-                Relations
-              </h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-base font-semibold flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-sky-400" />
+                  Relations
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setDetailModal('relations')}
+                  className="rounded-lg border border-slate-800 bg-slate-900/80 hover:border-sky-500/50 px-2.5 py-1 text-xs font-medium text-sky-400 transition-colors cursor-pointer"
+                >
+                  View all ({media.relations.length})
+                </button>
+              </div>
               <div className="flex gap-3 overflow-x-auto pb-2 snap-x md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible md:pb-0">
                 {media.relations.map((rel) => (
                   <Link
@@ -738,10 +786,19 @@ export function MediaDetailPage() {
           {/* Characters & Voice Actors */}
           {media.characters && media.characters.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-base font-semibold flex items-center gap-2">
-                <Users className="h-4 w-4 text-indigo-400" />
-                Characters {type === 'ANIME' ? '& Voice Actors' : ''}
-              </h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-base font-semibold flex items-center gap-2">
+                  <Users className="h-4 w-4 text-indigo-400" />
+                  Characters {type === 'ANIME' ? '& Voice Actors' : ''}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setDetailModal('characters')}
+                  className="rounded-lg border border-slate-800 bg-slate-900/80 hover:border-indigo-500/50 px-2.5 py-1 text-xs font-medium text-indigo-400 transition-colors cursor-pointer"
+                >
+                  View all ({media.characters.length})
+                </button>
+              </div>
               <div className="flex gap-3 overflow-x-auto pb-2 snap-x md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible md:pb-0">
                 {media.characters.map((ch) => (
                   <div
@@ -839,6 +896,122 @@ export function MediaDetailPage() {
           onSave={(update) => updateEntry.mutate(update)}
           onDelete={(mediaId) => deleteEntry.mutate({ mediaId, type })}
         />
+      )}
+
+      {detailModal && media && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setDetailModal(null)}
+        >
+          <div
+            className="w-full sm:max-w-2xl max-h-[85vh] rounded-t-2xl sm:rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+              <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                {detailModal === 'relations' ? (
+                  <>
+                    <Sparkles className="h-4 w-4 text-sky-400" />
+                    All Relations ({media.relations?.length ?? 0})
+                  </>
+                ) : (
+                  <>
+                    <Users className="h-4 w-4 text-indigo-400" />
+                    All Characters {type === 'ANIME' ? '& Voice Actors' : ''} (
+                    {media.characters?.length ?? 0})
+                  </>
+                )}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setDetailModal(null)}
+                className="rounded-lg p-1 text-slate-400 hover:text-slate-100 hover:bg-slate-800 cursor-pointer"
+                aria-label="Close modal"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-4 space-y-2.5">
+              {detailModal === 'relations'
+                ? (media.relations ?? []).map((rel) => (
+                    <Link
+                      key={`${rel.relationType}-${rel.id}`}
+                      to={`/media/${rel.type.toLowerCase()}/${encodeURIComponent(
+                        resolveTargetId(rel)
+                      )}`}
+                      onClick={() => setDetailModal(null)}
+                      className="flex items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-950/60 hover:border-sky-500/50 p-2.5 transition-colors"
+                    >
+                      <img
+                        src={
+                          rel.coverUrl ||
+                          'https://placehold.co/60x84/0f172a/64748b?text=?'
+                        }
+                        alt={formatMediaTitle(rel, titleLang)}
+                        className="h-16 w-12 rounded-lg object-cover shrink-0 bg-slate-800"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-mono uppercase text-sky-400">
+                          {rel.relationType.replace(/_/g, ' ')}
+                        </div>
+                        <div className="text-sm font-semibold text-slate-100 line-clamp-2 mt-0.5">
+                          {formatMediaTitle(rel, titleLang)}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">
+                          {rel.format ?? rel.type}
+                        </div>
+                      </div>
+                    </Link>
+                  ))
+                : (media.characters ?? []).map((ch) => (
+                    <div
+                      key={ch.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-slate-800/80 bg-slate-950/60 p-2.5"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={
+                            ch.imageUrl ||
+                            'https://placehold.co/48x64/0f172a/64748b?text=?'
+                          }
+                          alt={ch.name}
+                          className="h-14 w-10 rounded-lg object-cover shrink-0 bg-slate-800"
+                        />
+                        <div className="min-w-0">
+                          <div className="text-xs sm:text-sm font-semibold text-slate-100 truncate">
+                            {ch.name}
+                          </div>
+                          {ch.role && (
+                            <div className="text-[10px] font-mono text-slate-400">
+                              {ch.role}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {ch.voiceActor && (
+                        <div className="flex items-center gap-2.5 text-right min-w-0">
+                          <div className="min-w-0">
+                            <div className="text-xs sm:text-sm text-slate-200 truncate">
+                              {ch.voiceActor.name}
+                            </div>
+                            <div className="text-[10px] text-slate-500">JP</div>
+                          </div>
+                          {ch.voiceActor.imageUrl && (
+                            <img
+                              src={ch.voiceActor.imageUrl}
+                              alt={ch.voiceActor.name}
+                              className="h-14 w-10 rounded-lg object-cover shrink-0 bg-slate-800"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+            </div>
+          </div>
+        </div>
       )}
     </DesktopLayout>
   );

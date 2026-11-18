@@ -119,14 +119,9 @@ export function HomePage() {
       <div className="space-y-6">
         {/* Highlighted Greeting + Anime & Manga Counts on Top */}
         <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 sm:p-5 flex flex-col gap-3">
-          <div>
-            <p className="text-[11px] font-mono uppercase tracking-wider text-sky-400">
-              Dashboard
-            </p>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 mt-0.5">
-              Welcome back, <span className="text-sky-400">{session?.user.name}</span>
-            </h1>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-100">
+            Welcome back, <span className="text-sky-400">{session?.user.name}</span>
+          </h1>
 
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="inline-flex items-center gap-2 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3.5 py-2">
