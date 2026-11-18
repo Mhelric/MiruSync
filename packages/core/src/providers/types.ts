@@ -153,9 +153,52 @@ export interface Page<T> {
   total?: number;
 }
 
+export interface ProfileActivityPoint {
+  date: string; // 'YYYY-MM-DD'
+  timestamp: number; // unix seconds
+  amount: number;
+  level: number; // 0..4
+}
+
+export interface ProfileFavoriteItem {
+  id: string;
+  kind: 'ANIME' | 'MANGA' | 'CHARACTER';
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  mediaType?: MediaType;
+  score?: number;
+}
+
+export interface ProfileActivityEvent {
+  id: string;
+  status: string;
+  progress?: string;
+  createdAt: number; // epoch ms
+  media: {
+    id: string;
+    type: MediaType;
+    title: { romaji?: string; english?: string; native?: string };
+    coverUrl?: string;
+  };
+}
+
+export interface UserProfileDetails {
+  bannerUrl?: string;
+  about?: string;
+  activityHistory: ProfileActivityPoint[];
+  favorites: {
+    anime: ProfileFavoriteItem[];
+    manga: ProfileFavoriteItem[];
+    characters: ProfileFavoriteItem[];
+  };
+  recentActivities: ProfileActivityEvent[];
+}
+
 export interface MediaProvider {
   id: ProviderId;
   getCurrentUser(): Promise<AppUser>;
+  getProfileDetails(): Promise<UserProfileDetails>;
   getList(type: MediaType, status?: ListStatus): Promise<ListEntry[]>;
   updateEntry(entry: EntryUpdate): Promise<ListEntry>;
   deleteEntry(mediaId: string, type: MediaType): Promise<void>;

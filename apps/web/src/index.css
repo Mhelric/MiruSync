@@ -182,3 +182,38 @@ html.light .hero-banner .bg-sky-500\/20 {
 .animate-ken-burns {
   animation: ken-burns 12s ease-out forwards;
 }
+
+/* GitHub-style activity heatmap levels */
+.gh-cell-0 {
+  background-color: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.gh-cell-1 {
+  background-color: #0e4429;
+}
+.gh-cell-2 {
+  background-color: #006d32;
+}
+.gh-cell-3 {
+  background-color: #26a641;
+}
+.gh-cell-4 {
+  background-color: #39d353;
+}
+
+html.light .gh-cell-0 {
+  background-color: #ebedf0 !important;
+  border: 1px solid rgba(27, 31, 35, 0.06) !important;
+}
+html.light .gh-cell-1 {
+  background-color: #9be9a8 !important;
+}
+html.light .gh-cell-2 {
+  background-color: #40c463 !important;
+}
+html.light .gh-cell-3 {
+  background-color: #30a14e !important;
+}
+html.light .gh-cell-4 {
+  background-color: #216e39 !important;
+}

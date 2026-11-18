@@ -7,8 +7,12 @@ import type {
   MediaProvider,
   MediaType,
   Page,
+  ProfileActivityEvent,
+  ProfileActivityPoint,
+  ProfileFavoriteItem,
   ScoreFormat,
   SearchFilters,
+  UserProfileDetails,
 } from './types';
 
 const ANILIST_ENDPOINT = 'https://graphql.anilist.co';
@@ -360,6 +364,44 @@ function stripIdPrefix(id: string): number {
   return Number(id.replace(/^al:/, ''));
 }
 
+function toIsoDateKey(unixSeconds: number): string {
+  return new Date(unixSeconds * 1000).toISOString().slice(0, 10);
+}
+
+function normalizeActivityLevel(amount: number): number {
+  if (amount >= 6) return 4;
+  if (amount >= 4) return 3;
+  if (amount >= 2) return 2;
+  if (amount > 0) return 1;
+  return 0;
+}
+
+interface AniListFavoriteMediaNode {
+  id: number;
+  idMal?: number | null;
+  type: MediaType;
+  title?: { romaji?: string | null; english?: string | null; native?: string | null };
+  coverImage?: { extraLarge?: string | null; large?: string | null };
+  format?: string | null;
+  averageScore?: number | null;
+  seasonYear?: number | null;
+}
+
+function mapAniListFavoriteMedia(
+  node: AniListFavoriteMediaNode,
+  kind: 'ANIME' | 'MANGA'
+): ProfileFavoriteItem {
+  return {
+    id: `al:${node.id}`,
+    kind,
+    title: node.title?.english ?? node.title?.romaji ?? node.title?.native ?? 'Untitled',
+    subtitle: [node.format, node.seasonYear].filter(Boolean).join(' · ') || undefined,
+    imageUrl: node.coverImage?.extraLarge ?? node.coverImage?.large ?? undefined,
+    mediaType: node.type,
+    score: node.averageScore ?? undefined,
+  };
+}
+
 export class AniListProvider implements MediaProvider {
   id = 'anilist' as const;
   private accessToken?: string;
@@ -424,6 +466,177 @@ export class AniListProvider implements MediaProvider {
       name: data.Viewer.name,
       avatarUrl: data.Viewer.avatar?.large,
       scoreFormat: data.Viewer.mediaListOptions?.scoreFormat ?? 'POINT_10',
+    };
+  }
+
+  async getProfileDetails(): Promise<UserProfileDetails> {
+    if (!this.cachedUserId) {
+      await this.getCurrentUser();
+    }
+
+    interface AniListProfileRaw {
+      User?: {
+        bannerImage?: string | null;
+        about?: string | null;
+        stats?: {
+          activityHistory?: { date: number; amount: number; level: number }[] | null;
+        } | null;
+        favourites?: {
+          anime?: { nodes?: AniListFavoriteMediaNode[] | null } | null;
+          manga?: { nodes?: AniListFavoriteMediaNode[] | null } | null;
+          characters?: {
+            nodes?: {
+              id: number;
+              name?: { full?: string | null };
+              image?: { large?: string | null };
+            }[] | null;
+          } | null;
+        } | null;
+      } | null;
+      Page?: {
+        activities?: Array<{
+          id?: number;
+          status?: string | null;
+          progress?: string | null;
+          createdAt?: number | null;
+          media?: {
+            id: number;
+            idMal?: number | null;
+            type: MediaType;
+            title?: { romaji?: string | null; english?: string | null; native?: string | null };
+            coverImage?: { extraLarge?: string | null; large?: string | null };
+          } | null;
+        }> | null;
+      } | null;
+    }
+
+    const data = await this.gql<AniListProfileRaw>(
+      `
+      query ($userId: Int!) {
+        User(id: $userId) {
+          id
+          name
+          bannerImage
+          about(asHtml: false)
+          stats {
+            activityHistory {
+              date
+              amount
+              level
+            }
+          }
+          favourites {
+            anime(page: 1, perPage: 12) {
+              nodes {
+                id
+                idMal
+                type
+                title { romaji english native }
+                coverImage { extraLarge large }
+                format
+                averageScore
+                seasonYear
+              }
+            }
+            manga(page: 1, perPage: 12) {
+              nodes {
+                id
+                idMal
+                type
+                title { romaji english native }
+                coverImage { extraLarge large }
+                format
+                averageScore
+                seasonYear
+              }
+            }
+            characters(page: 1, perPage: 12) {
+              nodes {
+                id
+                name { full }
+                image { large }
+              }
+            }
+          }
+        }
+        Page(page: 1, perPage: 16) {
+          activities(userId: $userId, type: MEDIA_LIST, sort: ID_DESC) {
+            ... on ListActivity {
+              id
+              status
+              progress
+              createdAt
+              media {
+                id
+                idMal
+                type
+                title { romaji english native }
+                coverImage { extraLarge large }
+              }
+            }
+          }
+        }
+      }
+      `,
+      { userId: this.cachedUserId }
+    );
+
+    const activityHistory: ProfileActivityPoint[] = (
+      data.User?.stats?.activityHistory ?? []
+    ).map((pt) => ({
+      date: toIsoDateKey(pt.date),
+      timestamp: pt.date,
+      amount: pt.amount,
+      level: normalizeActivityLevel(pt.amount),
+    }));
+
+    const animeFavs = (data.User?.favourites?.anime?.nodes ?? []).map((n) =>
+      mapAniListFavoriteMedia(n, 'ANIME')
+    );
+    const mangaFavs = (data.User?.favourites?.manga?.nodes ?? []).map((n) =>
+      mapAniListFavoriteMedia(n, 'MANGA')
+    );
+    const characterFavs: ProfileFavoriteItem[] = (
+      data.User?.favourites?.characters?.nodes ?? []
+    ).map((c) => ({
+      id: `char:${c.id}`,
+      kind: 'CHARACTER',
+      title: c.name?.full ?? 'Unknown',
+      imageUrl: c.image?.large ?? undefined,
+    }));
+
+    const recentActivities: ProfileActivityEvent[] = [];
+    for (const act of data.Page?.activities ?? []) {
+      if (!act?.id || !act.media) continue;
+      recentActivities.push({
+        id: String(act.id),
+        status: act.status ?? 'updated',
+        progress: act.progress ?? undefined,
+        createdAt: (act.createdAt ?? Math.floor(Date.now() / 1000)) * 1000,
+        media: {
+          id: `al:${act.media.id}`,
+          type: act.media.type,
+          title: {
+            romaji: act.media.title?.romaji ?? undefined,
+            english: act.media.title?.english ?? undefined,
+            native: act.media.title?.native ?? undefined,
+          },
+          coverUrl:
+            act.media.coverImage?.extraLarge ?? act.media.coverImage?.large ?? undefined,
+        },
+      });
+    }
+
+    return {
+      bannerUrl: data.User?.bannerImage ?? undefined,
+      about: data.User?.about ?? undefined,
+      activityHistory,
+      favorites: {
+        anime: animeFavs,
+        manga: mangaFavs,
+        characters: characterFavs,
+      },
+      recentActivities,
     };
   }
 

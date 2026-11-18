@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../auth/store';
 import { createProvider } from '../providers';
-import type { EntryUpdate, ListEntry, ListStatus, MediaType } from '../providers/types';
+import type {
+  EntryUpdate,
+  ListEntry,
+  ListStatus,
+  MediaType,
+  UserProfileDetails,
+} from '../providers/types';
 import { db } from '../storage/db';
 
 export function useOnlineStatus(): boolean {
@@ -76,6 +82,28 @@ export function useMediaDetail(id: string | undefined, type: MediaType, apiBase 
     queryFn: async () => {
       if (!provider || !id) throw new Error('Missing provider or media id');
       return provider.getMedia(id, type);
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useProfileDetails(apiBase = '') {
+  const session = useAuthStore((s) => s.session);
+  const provider = useProvider(apiBase);
+  const userId = session?.user.id ?? '';
+
+  return useQuery<UserProfileDetails>({
+    queryKey: ['profileDetails', userId],
+    enabled: Boolean(provider && userId),
+    queryFn: async () => {
+      if (!provider) {
+        return {
+          activityHistory: [],
+          favorites: { anime: [], manga: [], characters: [] },
+          recentActivities: [],
+        };
+      }
+      return provider.getProfileDetails();
     },
     staleTime: 1000 * 60 * 5,
   });

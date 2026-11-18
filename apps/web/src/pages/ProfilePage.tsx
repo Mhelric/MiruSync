@@ -1,6 +1,30 @@
-import { useMemo } from 'react';
-import { BookOpen, Star, Tv } from 'lucide-react';
-import { useAuthStore, useMediaList, type ListStatus } from '@mirusync/core';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Activity,
+  BookOpen,
+  CalendarDays,
+  Clock,
+  Flame,
+  Heart,
+  Sparkles,
+  Star,
+  Tv,
+  Users,
+} from 'lucide-react';
+import {
+  formatMediaTitle,
+  useAuthStore,
+  useMediaList,
+  useProfileDetails,
+  useSettingsStore,
+  type ListEntry,
+  type ListStatus,
+  type MediaType,
+  type ProfileActivityEvent,
+  type ProfileActivityPoint,
+  type ProfileFavoriteItem,
+} from '@mirusync/core';
 import { DesktopLayout } from '../layouts/DesktopLayout';
 
 const STATUS_LABELS: { key: ListStatus; label: string; color: string }[] = [
@@ -11,10 +35,596 @@ const STATUS_LABELS: { key: ListStatus; label: string; color: string }[] = [
   { key: 'DROPPED', label: 'Dropped', color: 'bg-rose-500' },
 ];
 
+const SHORT_MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+const WEEKDAY_ROWS = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
+
+interface HeatmapCell {
+  date: string;
+  label: string;
+  amount: number;
+  level: number;
+  isFuture: boolean;
+}
+
+interface HeatmapGridData {
+  weeks: HeatmapCell[][];
+  monthLabels: (string | null)[];
+  totalUpdates: number;
+  activeDays: number;
+  currentStreak: number;
+  bestStreak: number;
+}
+
+function toUtcDateKey(epochMs: number): string {
+  return new Date(epochMs).toISOString().slice(0, 10);
+}
+
+function formatUtcDateLabel(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const dt = new Date(Date.UTC(y || 2026, (m || 1) - 1, d || 1));
+  return dt.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+function formatRelativeTime(epochMs: number): string {
+  const diffSec = Math.max(0, Math.floor((Date.now() - epochMs) / 1000));
+  if (diffSec < 60) return 'Just now';
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+  if (diffSec < 86400 * 30) return `${Math.floor(diffSec / 86400)}d ago`;
+  return new Date(epochMs).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function amountToLevel(amount: number): number {
+  if (amount >= 6) return 4;
+  if (amount >= 3) return 3;
+  if (amount >= 2) return 2;
+  if (amount > 0) return 1;
+  return 0;
+}
+
+function incrementDateMap(map: Map<string, number>, key?: string) {
+  if (!key || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return;
+  map.set(key, (map.get(key) ?? 0) + 1);
+}
+
+function buildHeatmapData(
+  history: ProfileActivityPoint[],
+  recentActivities: ProfileActivityEvent[],
+  entries: ListEntry[]
+): HeatmapGridData {
+  const historyMap = new Map<string, ProfileActivityPoint>();
+  for (const point of history) {
+    historyMap.set(point.date, point);
+  }
+
+  const activityCounts = new Map<string, number>();
+  for (const act of recentActivities) {
+    incrementDateMap(activityCounts, toUtcDateKey(act.createdAt));
+  }
+
+  const listCounts = new Map<string, number>();
+  for (const entry of entries) {
+    if (entry.updatedAt) {
+      incrementDateMap(listCounts, toUtcDateKey(entry.updatedAt));
+    }
+    incrementDateMap(listCounts, entry.startedAt);
+    incrementDateMap(listCounts, entry.completedAt);
+  }
+
+  const now = new Date();
+  const todayUtcMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const todayDow = new Date(todayUtcMs).getUTCDay();
+  const dayMs = 86400 * 1000;
+  const totalWeeks = 53;
+  const startUtcMs = todayUtcMs - (52 * 7 + todayDow) * dayMs;
+
+  const weeks: HeatmapCell[][] = [];
+  const monthLabels: (string | null)[] = [];
+  const flatValidDays: HeatmapCell[] = [];
+
+  let lastLabeledMonth = -1;
+  let totalUpdates = 0;
+  let activeDays = 0;
+
+  for (let w = 0; w < totalWeeks; w++) {
+    const col: HeatmapCell[] = [];
+    for (let d = 0; d < 7; d++) {
+      const cellMs = startUtcMs + (w * 7 + d) * dayMs;
+      const isFuture = cellMs > todayUtcMs;
+      const dateStr = toUtcDateKey(cellMs);
+
+      const hp = historyMap.get(dateStr);
+      const effectiveAmount = isFuture
+        ? 0
+        : Math.max(
+            hp?.amount ?? 0,
+            activityCounts.get(dateStr) ?? 0,
+            listCounts.get(dateStr) ?? 0
+          );
+      const level = isFuture
+        ? 0
+        : hp && hp.amount === effectiveAmount && hp.level > 0
+          ? Math.min(4, hp.level)
+          : amountToLevel(effectiveAmount);
+
+      const cell: HeatmapCell = {
+        date: dateStr,
+        label: formatUtcDateLabel(dateStr),
+        amount: effectiveAmount,
+        level,
+        isFuture,
+      };
+      col.push(cell);
+
+      if (!isFuture) {
+        flatValidDays.push(cell);
+        totalUpdates += effectiveAmount;
+        if (effectiveAmount > 0) activeDays += 1;
+      }
+    }
+    weeks.push(col);
+
+    const firstCellDt = new Date(startUtcMs + w * 7 * dayMs);
+    const colMonth = firstCellDt.getUTCMonth();
+    const colDay = firstCellDt.getUTCDate();
+    if (colMonth !== lastLabeledMonth && (w > 0 || colDay <= 14)) {
+      monthLabels.push(SHORT_MONTHS[colMonth]);
+      lastLabeledMonth = colMonth;
+    } else {
+      monthLabels.push(null);
+    }
+  }
+
+  let bestStreak = 0;
+  let running = 0;
+  for (const day of flatValidDays) {
+    if (day.amount > 0) {
+      running += 1;
+      if (running > bestStreak) bestStreak = running;
+    } else {
+      running = 0;
+    }
+  }
+
+  let currentStreak = 0;
+  let idx = flatValidDays.length - 1;
+  if (idx >= 0 && flatValidDays[idx].amount === 0) {
+    idx -= 1;
+  }
+  while (idx >= 0 && flatValidDays[idx].amount > 0) {
+    currentStreak += 1;
+    idx -= 1;
+  }
+
+  return {
+    weeks,
+    monthLabels,
+    totalUpdates,
+    activeDays,
+    currentStreak,
+    bestStreak,
+  };
+}
+
+function buildFallbackFavorites(
+  entries: ListEntry[],
+  kind: 'ANIME' | 'MANGA',
+  titleLang: 'romaji' | 'english' | 'native'
+): ProfileFavoriteItem[] {
+  return [...entries]
+    .filter((e) => (e.score ?? 0) >= 80)
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, 12)
+    .map((e) => ({
+      id: e.media.id,
+      kind,
+      title: formatMediaTitle(e.media, titleLang),
+      subtitle:
+        [e.media.format, e.media.seasonYear].filter(Boolean).join(' · ') || undefined,
+      imageUrl: e.media.coverUrl,
+      mediaType: e.media.type,
+      score: e.score,
+    }));
+}
+
+function formatListStatusVerb(status: ListStatus, type: MediaType): string {
+  switch (status) {
+    case 'CURRENT':
+      return type === 'ANIME' ? 'Watching' : 'Reading';
+    case 'COMPLETED':
+      return 'Completed';
+    case 'PLANNING':
+      return type === 'ANIME' ? 'Plan to watch' : 'Plan to read';
+    case 'PAUSED':
+      return 'On hold';
+    case 'DROPPED':
+      return 'Dropped';
+    case 'REPEATING':
+      return type === 'ANIME' ? 'Rewatching' : 'Rereading';
+  }
+}
+
+function synthesizeRecentActivities(entries: ListEntry[]): ProfileActivityEvent[] {
+  return [...entries]
+    .filter((e) => e.updatedAt > 0)
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, 12)
+    .map((e) => ({
+      id: `entry:${e.media.id}:${e.updatedAt}`,
+      status: formatListStatusVerb(e.status, e.media.type),
+      progress:
+        e.progress > 0
+          ? e.media.type === 'ANIME'
+            ? `ep. ${e.progress}`
+            : `ch. ${e.progress}`
+          : undefined,
+      createdAt: e.updatedAt,
+      media: {
+        id: e.media.id,
+        type: e.media.type,
+        title: e.media.title,
+        coverUrl: e.media.coverUrl,
+      },
+    }));
+}
+
+function ActivityHeatmapSection({
+  grid,
+  totalTracked,
+}: {
+  grid: HeatmapGridData;
+  totalTracked: number;
+}) {
+  const [hovered, setHovered] = useState<HeatmapCell | null>(null);
+
+  return (
+    <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-emerald-400" />
+            <h2 className="text-sm font-semibold text-slate-100">
+              Activity History
+            </h2>
+          </div>
+          <span className="text-xs font-mono text-slate-400">
+            {grid.totalUpdates} updates in the last year
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/70 px-2.5 py-1 text-slate-300">
+            <Activity className="h-3 w-3 text-emerald-400" />
+            <span className="font-mono font-semibold">{grid.activeDays}</span> active days
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/70 px-2.5 py-1 text-slate-300">
+            <Flame className="h-3 w-3 text-amber-400" />
+            <span className="font-mono font-semibold">{grid.currentStreak}d</span> streak
+            {grid.bestStreak > grid.currentStreak && (
+              <span className="text-slate-500 font-mono">
+                (best {grid.bestStreak}d)
+              </span>
+            )}
+          </span>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-4 overflow-x-auto">
+        <div className="inline-block min-w-max">
+          {/* Month header row */}
+          <div className="flex items-center mb-1.5 pl-8 gap-[3px]">
+            {grid.monthLabels.map((label, i) => (
+              <div
+                key={i}
+                className="w-3 text-[10px] font-mono text-slate-400 leading-none overflow-visible whitespace-nowrap"
+              >
+                {label ?? ''}
+              </div>
+            ))}
+          </div>
+
+          {/* Weekday labels + 53x7 cells */}
+          <div className="flex items-start gap-2">
+            <div className="grid grid-rows-7 gap-[3px] w-6 shrink-0">
+              {WEEKDAY_ROWS.map((day, idx) => (
+                <div
+                  key={idx}
+                  className="h-3 text-[10px] font-mono text-slate-400 leading-3 flex items-center"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-[3px]" onMouseLeave={() => setHovered(null)}>
+              {grid.weeks.map((week, wIdx) => (
+                <div key={wIdx} className="grid grid-rows-7 gap-[3px]">
+                  {week.map((cell, dIdx) =>
+                    cell.isFuture ? (
+                      <div key={dIdx} className="h-3 w-3" aria-hidden="true" />
+                    ) : (
+                      <button
+                        key={cell.date}
+                        type="button"
+                        onMouseEnter={() => setHovered(cell)}
+                        onFocus={() => setHovered(cell)}
+                        title={`${cell.amount} ${cell.amount === 1 ? 'update' : 'updates'} on ${cell.label}`}
+                        aria-label={`${cell.amount} updates on ${cell.label}`}
+                        className={`h-3 w-3 rounded-[3px] transition-transform hover:scale-125 hover:ring-1 hover:ring-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-400 gh-cell-${cell.level}`}
+                      />
+                    )
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+        <div>
+          {hovered ? (
+            <span className="font-mono text-slate-200">
+              {hovered.amount} {hovered.amount === 1 ? 'update' : 'updates'} on{' '}
+              {hovered.label}
+            </span>
+          ) : (
+            <span>
+              {totalTracked} titles tracked · Hover a square to inspect daily updates
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span>Less</span>
+          {[0, 1, 2, 3, 4].map((lvl) => (
+            <span
+              key={lvl}
+              className={`h-2.5 w-2.5 rounded-[2px] gh-cell-${lvl}`}
+              aria-hidden="true"
+            />
+          ))}
+          <span>More</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FavoritesSection({
+  animeFavs,
+  mangaFavs,
+  characterFavs,
+  animeFallback,
+  mangaFallback,
+  isLoading,
+}: {
+  animeFavs: ProfileFavoriteItem[];
+  mangaFavs: ProfileFavoriteItem[];
+  characterFavs: ProfileFavoriteItem[];
+  animeFallback: boolean;
+  mangaFallback: boolean;
+  isLoading: boolean;
+}) {
+  const [tab, setTab] = useState<'ANIME' | 'MANGA' | 'CHARACTER'>('ANIME');
+
+  const tabs: { key: 'ANIME' | 'MANGA' | 'CHARACTER'; label: string; count: number }[] = [
+    { key: 'ANIME', label: 'Anime', count: animeFavs.length },
+    { key: 'MANGA', label: 'Manga', count: mangaFavs.length },
+    { key: 'CHARACTER', label: 'Characters', count: characterFavs.length },
+  ];
+
+  const activeItems =
+    tab === 'ANIME' ? animeFavs : tab === 'MANGA' ? mangaFavs : characterFavs;
+  const showingFallback =
+    (tab === 'ANIME' && animeFallback) || (tab === 'MANGA' && mangaFallback);
+
+  return (
+    <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Heart className="h-4 w-4 text-rose-400" />
+          <h2 className="text-sm font-semibold text-slate-100">Favorites</h2>
+          {showingFallback && activeItems.length > 0 && (
+            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-300">
+              Top Rated on List
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-950/70 p-1">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+                tab === t.key
+                  ? 'bg-sky-500/15 text-sky-300 border border-sky-500/30'
+                  : 'text-slate-400 hover:text-slate-200 border border-transparent'
+              }`}
+            >
+              {t.key === 'CHARACTER' && <Users className="h-3 w-3" />}
+              {t.label}
+              <span className="font-mono text-[10px] opacity-80">{t.count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {isLoading && activeItems.length === 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="aspect-[3/4] rounded-xl bg-slate-800/60 animate-pulse"
+            />
+          ))}
+        </div>
+      ) : activeItems.length === 0 ? (
+        <p className="text-xs text-slate-400 py-4">
+          {tab === 'CHARACTER'
+            ? 'No favorite characters synced from your profile yet.'
+            : `No favorite ${tab.toLowerCase()} found yet. Star titles on your profile or score titles 8+ to feature them here.`}
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {activeItems.map((item) => {
+            const cardInner = (
+              <div className="group rounded-xl border border-slate-800/80 bg-slate-950/60 overflow-hidden hover:border-sky-500/40 transition-all h-full flex flex-col">
+                <div className="relative aspect-[3/4] bg-slate-800 overflow-hidden">
+                  {item.imageUrl ? (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-slate-500">
+                      <Sparkles className="h-6 w-6" />
+                    </div>
+                  )}
+                  {item.score && item.score > 0 && (
+                    <span className="absolute top-2 right-2 rounded-md bg-slate-950/85 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-amber-300 flex items-center gap-1">
+                      <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+                      {item.score}%
+                    </span>
+                  )}
+                </div>
+                <div className="p-2.5 space-y-0.5 flex-1">
+                  <div className="text-xs font-medium text-slate-100 line-clamp-2 group-hover:text-sky-300 transition-colors">
+                    {item.title}
+                  </div>
+                  <div className="text-[10px] text-slate-400 truncate">
+                    {item.subtitle ??
+                      (item.kind === 'CHARACTER' ? 'Favorite Character' : item.kind)}
+                  </div>
+                </div>
+              </div>
+            );
+
+            if (item.kind === 'CHARACTER') {
+              return <div key={item.id}>{cardInner}</div>;
+            }
+
+            const routeType = (item.mediaType ?? item.kind).toLowerCase();
+            return (
+              <Link
+                key={item.id}
+                to={`/media/${routeType}/${encodeURIComponent(item.id)}`}
+              >
+                {cardInner}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RecentActivitySection({
+  activities,
+  titleLang,
+}: {
+  activities: ProfileActivityEvent[];
+  titleLang: 'romaji' | 'english' | 'native';
+}) {
+  return (
+    <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-sky-400" />
+          <h2 className="text-sm font-semibold text-slate-100">Recent Activity</h2>
+        </div>
+        <span className="text-xs font-mono text-slate-400">
+          {activities.length} recent
+        </span>
+      </div>
+
+      {activities.length === 0 ? (
+        <p className="text-xs text-slate-400 py-2">
+          No recent tracker activity recorded yet.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {activities.map((act) => {
+            const title = formatMediaTitle(act.media, titleLang);
+            const actionLabel = act.progress
+              ? `${act.status} ${act.progress}`
+              : act.status;
+            return (
+              <Link
+                key={act.id}
+                to={`/media/${act.media.type.toLowerCase()}/${encodeURIComponent(act.media.id)}`}
+                className="group flex items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-950/60 p-3 hover:border-sky-500/40 transition-colors"
+              >
+                {act.media.coverUrl ? (
+                  <img
+                    src={act.media.coverUrl}
+                    alt={title}
+                    loading="lazy"
+                    className="h-14 w-10 rounded-md object-cover shrink-0 bg-slate-800"
+                  />
+                ) : (
+                  <div className="h-14 w-10 rounded-md bg-slate-800 shrink-0" />
+                )}
+
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="text-xs font-semibold text-slate-100 truncate group-hover:text-sky-300 transition-colors">
+                    {title}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-300 capitalize">
+                      {actionLabel}
+                    </span>
+                    <span className="rounded-md border border-slate-800 bg-slate-900 px-1.5 py-0.5 text-[10px] font-mono text-slate-400">
+                      {act.media.type}
+                    </span>
+                  </div>
+                </div>
+
+                <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                  {formatRelativeTime(act.createdAt)}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function ProfilePage() {
   const session = useAuthStore((s) => s.session);
+  const titleLang = useSettingsStore((s) => s.settings.title_language);
   const { data: animeList } = useMediaList('ANIME');
   const { data: mangaList } = useMediaList('MANGA');
+  const { data: profileDetails, isLoading: profileLoading } = useProfileDetails();
 
   const stats = useMemo(() => {
     const anime = animeList ?? [];
@@ -22,6 +632,13 @@ export function ProfilePage() {
 
     const episodesWatched = anime.reduce((sum, e) => sum + e.progress, 0);
     const chaptersRead = manga.reduce((sum, e) => sum + e.progress, 0);
+
+    const watchingCount = anime.filter(
+      (e) => e.status === 'CURRENT' || e.status === 'REPEATING'
+    ).length;
+    const readingCount = manga.filter(
+      (e) => e.status === 'CURRENT' || e.status === 'REPEATING'
+    ).length;
 
     const scored = [...anime, ...manga].filter((e) => e.score && e.score > 0);
     const meanScore =
@@ -47,6 +664,8 @@ export function ProfilePage() {
     return {
       totalAnime: anime.length,
       totalManga: manga.length,
+      watchingCount,
+      readingCount,
       episodesWatched,
       chaptersRead,
       meanScore,
@@ -56,33 +675,111 @@ export function ProfilePage() {
     };
   }, [animeList, mangaList]);
 
+  const recentActivities = useMemo(() => {
+    if ((profileDetails?.recentActivities?.length ?? 0) > 0) {
+      return profileDetails!.recentActivities;
+    }
+    return synthesizeRecentActivities([...(animeList ?? []), ...(mangaList ?? [])]);
+  }, [profileDetails, animeList, mangaList]);
+
+  const heatmapGrid = useMemo(
+    () =>
+      buildHeatmapData(
+        profileDetails?.activityHistory ?? [],
+        profileDetails?.recentActivities ?? [],
+        [...(animeList ?? []), ...(mangaList ?? [])]
+      ),
+    [profileDetails, animeList, mangaList]
+  );
+
+  const favorites = useMemo(() => {
+    const providerAnime = profileDetails?.favorites.anime ?? [];
+    const providerManga = profileDetails?.favorites.manga ?? [];
+    const providerChars = profileDetails?.favorites.characters ?? [];
+
+    const animeFallback = providerAnime.length === 0;
+    const mangaFallback = providerManga.length === 0;
+
+    return {
+      anime: animeFallback
+        ? buildFallbackFavorites(animeList ?? [], 'ANIME', titleLang)
+        : providerAnime,
+      manga: mangaFallback
+        ? buildFallbackFavorites(mangaList ?? [], 'MANGA', titleLang)
+        : providerManga,
+      characters: providerChars,
+      animeFallback,
+      mangaFallback,
+    };
+  }, [profileDetails, animeList, mangaList, titleLang]);
+
+  const lastActivityMs = recentActivities[0]?.createdAt;
+  const activityStatusText =
+    stats.watchingCount > 0 || stats.readingCount > 0
+      ? `Active · Watching ${stats.watchingCount} anime · Reading ${stats.readingCount} manga`
+      : `Synced · ${stats.totalEntries} titles tracked`;
+
   return (
     <DesktopLayout>
       <div className="space-y-6">
-        {/* Header Card */}
-        <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-6 flex flex-wrap items-center gap-5">
-          {session?.user.avatarUrl ? (
-            <img
-              src={session.user.avatarUrl}
-              alt={session.user.name}
-              className="h-20 w-20 rounded-full object-cover border-2 border-sky-500/40"
-            />
-          ) : (
-            <div className="h-20 w-20 rounded-full bg-slate-800 flex items-center justify-center text-2xl font-bold text-slate-400">
-              {session?.user.name.slice(0, 1).toUpperCase()}
+        {/* Header Card with Activity Status */}
+        <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 overflow-hidden">
+          {profileDetails?.bannerUrl && (
+            <div className="relative h-28 sm:h-36 w-full overflow-hidden">
+              <img
+                src={profileDetails.bannerUrl}
+                alt="Profile banner"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/20 to-transparent" />
             </div>
           )}
 
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold">{session?.user.name}</h1>
-              <span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-xs font-mono text-sky-400 uppercase">
-                {session?.provider === 'mal' ? 'MyAnimeList' : 'AniList'}
-              </span>
+          <div className="p-6 flex flex-wrap items-center justify-between gap-5">
+            <div className="flex flex-wrap items-center gap-5">
+              {session?.user.avatarUrl ? (
+                <img
+                  src={session.user.avatarUrl}
+                  alt={session.user.name}
+                  className="h-20 w-20 rounded-full object-cover border-2 border-sky-500/40"
+                />
+              ) : (
+                <div className="h-20 w-20 rounded-full bg-slate-800 flex items-center justify-center text-2xl font-bold text-slate-400">
+                  {session?.user.name.slice(0, 1).toUpperCase()}
+                </div>
+              )}
+
+              <div>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-2xl font-bold">{session?.user.name}</h1>
+                  <span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-xs font-mono text-sky-400 uppercase">
+                    {session?.provider === 'mal' ? 'MyAnimeList' : 'AniList'}
+                  </span>
+                </div>
+                <p className="text-xs font-mono text-slate-400 mt-1">
+                  ID: {session?.user.id}
+                </p>
+                {profileDetails?.about && (
+                  <p className="text-xs text-slate-300 mt-2 max-w-2xl line-clamp-2">
+                    {profileDetails.about}
+                  </p>
+                )}
+              </div>
             </div>
-            <p className="text-xs font-mono text-slate-400 mt-1">
-              ID: {session?.user.id}
-            </p>
+
+            {/* Live Activity Status Pill */}
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs text-emerald-300">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+              </span>
+              <span className="font-medium">{activityStatusText}</span>
+              {lastActivityMs && (
+                <span className="font-mono text-[11px] opacity-80 border-l border-emerald-500/30 pl-2">
+                  Updated {formatRelativeTime(lastActivityMs)}
+                </span>
+              )}
+            </div>
           </div>
         </section>
 
@@ -124,6 +821,28 @@ export function ProfilePage() {
             </div>
           </div>
         </section>
+
+        {/* GitHub-Style Activity History Track Bar */}
+        <ActivityHeatmapSection
+          grid={heatmapGrid}
+          totalTracked={stats.totalEntries}
+        />
+
+        {/* User Favorites */}
+        <FavoritesSection
+          animeFavs={favorites.anime}
+          mangaFavs={favorites.manga}
+          characterFavs={favorites.characters}
+          animeFallback={favorites.animeFallback}
+          mangaFallback={favorites.mangaFallback}
+          isLoading={profileLoading}
+        />
+
+        {/* Recent Activity Status Feed */}
+        <RecentActivitySection
+          activities={recentActivities}
+          titleLang={titleLang}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Status Distribution */}

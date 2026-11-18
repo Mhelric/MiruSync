@@ -8,7 +8,9 @@ import type {
   MediaProvider,
   MediaType,
   Page,
+  ProfileFavoriteItem,
   SearchFilters,
+  UserProfileDetails,
 } from './types';
 
 const MAL_ANIME_FIELDS = [
@@ -198,6 +200,75 @@ export class MalProvider implements MediaProvider {
       name: me.name,
       avatarUrl: me.picture,
       scoreFormat: 'POINT_10',
+    };
+  }
+
+  async getProfileDetails(): Promise<UserProfileDetails> {
+    const me = await this.getCurrentUser();
+    const emptyFavorites: UserProfileDetails['favorites'] = {
+      anime: [],
+      manga: [],
+      characters: [],
+    };
+
+    interface JikanFavItemRaw {
+      mal_id: number;
+      title?: string;
+      name?: string;
+      type?: string;
+      start_year?: number;
+      images?: { jpg?: { image_url?: string }; webp?: { image_url?: string } };
+    }
+
+    const mapJikanGroup = (
+      items: JikanFavItemRaw[] | undefined,
+      kind: ProfileFavoriteItem['kind']
+    ): ProfileFavoriteItem[] =>
+      (items ?? []).slice(0, 12).map((item) => ({
+        id: kind === 'CHARACTER' ? `char:${item.mal_id}` : `mal:${item.mal_id}`,
+        kind,
+        title: item.title ?? item.name ?? 'Unknown',
+        subtitle:
+          kind === 'CHARACTER'
+            ? undefined
+            : [item.type, item.start_year].filter(Boolean).join(' · ') || undefined,
+        imageUrl: item.images?.jpg?.image_url ?? item.images?.webp?.image_url,
+        mediaType: kind === 'CHARACTER' ? undefined : kind,
+      }));
+
+    try {
+      const res = await fetch(
+        `https://api.jikan.moe/v4/users/${encodeURIComponent(me.name)}/favorites`,
+        { signal: AbortSignal.timeout(3500) }
+      );
+      if (res.ok) {
+        const json = (await res.json()) as {
+          data?: {
+            anime?: JikanFavItemRaw[];
+            manga?: JikanFavItemRaw[];
+            characters?: JikanFavItemRaw[];
+          };
+        };
+        if (json.data) {
+          return {
+            activityHistory: [],
+            favorites: {
+              anime: mapJikanGroup(json.data.anime, 'ANIME'),
+              manga: mapJikanGroup(json.data.manga, 'MANGA'),
+              characters: mapJikanGroup(json.data.characters, 'CHARACTER'),
+            },
+            recentActivities: [],
+          };
+        }
+      }
+    } catch {
+      // Fall back to empty provider favorites when Jikan times out or is unreachable
+    }
+
+    return {
+      activityHistory: [],
+      favorites: emptyFavorites,
+      recentActivities: [],
     };
   }
 
