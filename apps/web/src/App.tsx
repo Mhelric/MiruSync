@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Analytics } from '@vercel/analytics/react';
 import { useAuthStore } from '@mirusync/core';
 import { WelcomePage } from './pages/WelcomePage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
@@ -94,6 +95,7 @@ export default function App() {
       <BrowserRouter>
         <AppRoutes />
       </BrowserRouter>
+      <Analytics />
     </QueryClientProvider>
   );
 }
