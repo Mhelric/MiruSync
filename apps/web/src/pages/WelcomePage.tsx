@@ -38,6 +38,31 @@ const SCENES: SceneSlide[] = [
     title: 'Naruto',
     gifUrl: '/scenes/naruto.gif',
   },
+  {
+    id: 'aot',
+    title: 'Attack on Titan',
+    gifUrl: '/scenes/aot.gif',
+  },
+  {
+    id: 'jjk',
+    title: 'Jujutsu Kaisen',
+    gifUrl: '/scenes/jjk.gif',
+  },
+  {
+    id: 'demonslayer',
+    title: 'Demon Slayer',
+    gifUrl: '/scenes/demonslayer.gif',
+  },
+  {
+    id: 'fmab',
+    title: 'Fullmetal Alchemist: Brotherhood',
+    gifUrl: '/scenes/fmab.gif',
+  },
+  {
+    id: 'sololeveling',
+    title: 'Solo Leveling',
+    gifUrl: '/scenes/sololeveling.gif',
+  },
 ];
 
 const APK_DOWNLOAD_URL =
@@ -91,30 +116,6 @@ export function WelcomePage() {
               'radial-gradient(circle at center, rgba(2,6,23,0.45) 0%, rgba(2,6,23,0.88) 78%, rgba(2,6,23,0.96) 100%)',
           }}
         />
-      </div>
-
-      {/* Bottom-left Scene Indicator Pill */}
-      <div className="fixed bottom-5 left-5 z-10 hidden sm:flex items-center gap-3 rounded-full backdrop-blur-xl bg-slate-900/55 border border-white/10 px-4 py-2 text-xs text-slate-200 shadow-lg">
-        <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
-        <span className="text-slate-400">Now showing:</span>
-        <span className="font-medium text-slate-100">
-          {SCENES[activeIndex]?.title}
-        </span>
-        <div className="flex items-center gap-1.5 ml-1">
-          {SCENES.map((s, idx) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setActiveIndex(idx)}
-              aria-label={`Show ${s.title}`}
-              className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                idx === activeIndex
-                  ? 'w-4 bg-sky-400'
-                  : 'w-1.5 bg-white/30 hover:bg-white/60'
-              }`}
-            />
-          ))}
-        </div>
       </div>
 
       {/* Glassmorphism Sign-In Card */}
