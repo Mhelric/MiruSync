@@ -24,7 +24,7 @@ import {
 } from '@mirusync/core';
 import { CommandSearchModal } from '../components/CommandSearchModal';
 import { NotificationBell } from '../components/NotificationBell';
-import { MiruSyncLogo } from '../components/BrandIcons';
+import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
 
 const NAV_ITEMS = [
   { to: '/home', label: 'Home', icon: Home },
@@ -89,7 +89,11 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
         }`}
       >
         <div>
-          <div className="px-1.5 py-2 mb-4 flex items-center justify-between gap-2">
+          <div
+            className={`px-1.5 py-2 mb-4 flex items-center ${
+              sidebarCollapsed ? 'flex-col gap-2.5 justify-center' : 'justify-between gap-2'
+            }`}
+          >
             <div className="flex items-center gap-2.5 overflow-hidden">
               <MiruSyncLogo className="h-7 w-7 shrink-0" />
               {!sidebarCollapsed && (
@@ -99,11 +103,18 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
               )}
             </div>
 
-            {!sidebarCollapsed && (
-              <span className="rounded-md bg-slate-800 px-1.5 py-0.5 text-[10px] font-mono uppercase text-slate-400">
-                {session?.provider === 'mal' ? 'MAL' : 'AL'}
-              </span>
-            )}
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed((prev) => !prev)}
+              title="Toggle sidebar (Ctrl+B)"
+              className="rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 p-1.5 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer shrink-0"
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </button>
           </div>
 
           <nav className="relative space-y-1">
@@ -190,19 +201,6 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setSidebarCollapsed((prev) => !prev)}
-              title="Toggle sidebar (Ctrl+B)"
-              className="rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 p-1.5 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer"
-            >
-              {sidebarCollapsed ? (
-                <PanelLeftOpen className="h-4 w-4" />
-              ) : (
-                <PanelLeftClose className="h-4 w-4" />
-              )}
-            </button>
-
-            <button
-              type="button"
               onClick={() => setSearchOpen(true)}
               className="flex items-center gap-2.5 rounded-lg border border-slate-800 bg-slate-900/70 hover:border-slate-700 px-3 py-1.5 text-sm text-slate-400 w-64 sm:w-72 justify-between transition-colors cursor-pointer"
             >
@@ -228,16 +226,31 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
 
             <NotificationBell />
 
-            {session?.user.avatarUrl && (
-              <img
-                src={session.user.avatarUrl}
-                alt={session.user.name}
-                className="h-7 w-7 rounded-full object-cover border border-slate-700"
-              />
-            )}
-            <span className="text-sm font-medium text-slate-200 hidden sm:inline">
-              {session?.user.name}
-            </span>
+            <NavLink
+              to="/profile"
+              className="flex items-center gap-2 rounded-full border border-slate-800/80 bg-slate-900/60 hover:border-slate-700 pl-1.5 pr-2.5 py-1 transition-colors"
+              title={`Signed in with ${session?.provider === 'mal' ? 'MyAnimeList' : 'AniList'}`}
+            >
+              {session?.user.avatarUrl ? (
+                <img
+                  src={session.user.avatarUrl}
+                  alt={session.user.name}
+                  className="h-6 w-6 rounded-full object-cover border border-slate-700"
+                />
+              ) : (
+                <div className="h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
+                  {session?.user.name.slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              <span className="text-xs font-medium text-slate-200 hidden sm:inline">
+                {session?.user.name}
+              </span>
+              {session?.provider === 'mal' ? (
+                <MalIcon className="h-4 w-4 shrink-0 rounded-[4px]" />
+              ) : (
+                <AniListIcon className="h-4 w-4 shrink-0 rounded-[4px]" />
+              )}
+            </NavLink>
             <button
               type="button"
               onClick={() => setConfirmLogout(true)}
