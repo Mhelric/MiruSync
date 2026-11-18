@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download } from 'lucide-react';
+import { Download, Smartphone } from 'lucide-react';
 import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
@@ -165,7 +165,23 @@ export function WelcomePage() {
         </div>
 
         {/* Separate Glassmorphism Download APK Box */}
-        <div className="w-full rounded-2xl backdrop-blur-2xl bg-slate-900/45 border border-white/15 p-4 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.8)]">
+        <div className="w-full rounded-2xl backdrop-blur-2xl bg-slate-900/45 border border-white/15 p-5 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.8)] space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center shrink-0">
+                <Smartphone className="h-3.5 w-3.5 text-emerald-300" />
+              </div>
+              <span className="text-sm font-semibold text-white">
+                MiruSync for Android
+              </span>
+            </div>
+            <span className="rounded-full bg-emerald-500/15 border border-emerald-400/25 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
+              v1.1
+            </span>
+          </div>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            Take your list on the go with one-tap episode updates, offline tracking, and airing alerts.
+          </p>
           <a
             href={APK_DOWNLOAD_URL}
             target="_blank"
