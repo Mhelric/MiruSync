@@ -38,7 +38,23 @@ const ROUTES: Record<string, WebHandler> = {
   },
 };
 
+function corsHeaders(req: Request): HeadersInit {
+  const origin = req.headers.get('origin') || '*';
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Origin',
+  };
+}
+
 async function dispatch(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders(req) });
+  }
+
   const url = new URL(req.url);
   const routeFromQuery = url.searchParams.get('route');
   const pathSegment = url.pathname.replace(/^\/api\/?/, '').split('/')[0];
@@ -46,10 +62,25 @@ async function dispatch(req: Request): Promise<Response> {
   const handler = key ? ROUTES[key] : undefined;
 
   if (!handler) {
-    return Response.json({ error: `Unknown API route: ${key || '/'}` }, { status: 404 });
+    return Response.json(
+      { error: `Unknown API route: ${key || '/'}` },
+      { status: 404, headers: corsHeaders(req) }
+    );
   }
 
-  return handler(req, {} as Context);
+  const res = await handler(req, {} as Context);
+  const headers = new Headers(res.headers);
+  const cors = corsHeaders(req);
+  for (const [k, v] of Object.entries(cors)) {
+    if (!headers.has(k)) {
+      headers.set(k, v);
+    }
+  }
+  return new Response(res.body, {
+    status: res.status,
+    statusText: res.statusText,
+    headers,
+  });
 }
 
 export const GET = dispatch;
