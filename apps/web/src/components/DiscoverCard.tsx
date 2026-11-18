@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Check, Plus, Star } from 'lucide-react';
-import { formatMediaTitle, type Media } from '@mirusync/core';
+import {
+  formatMediaTitle,
+  useLocalPrefsStore,
+  useSettingsStore,
+  type Media,
+} from '@mirusync/core';
 
 interface DiscoverCardProps {
   media: Media;
@@ -9,7 +14,9 @@ interface DiscoverCardProps {
 }
 
 export function DiscoverCard({ media, inList, onQuickAdd }: DiscoverCardProps) {
-  const title = formatMediaTitle(media, 'romaji');
+  const titleLang = useSettingsStore((s) => s.settings.title_language);
+  const shortTitles = useLocalPrefsStore((s) => s.shortTitles);
+  const title = formatMediaTitle(media, titleLang, shortTitles);
   const detailPath = `/media/${media.type.toLowerCase()}/${encodeURIComponent(media.id)}`;
 
   return (
@@ -25,6 +32,11 @@ export function DiscoverCard({ media, inList, onQuickAdd }: DiscoverCardProps) {
           <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md bg-slate-950/85 backdrop-blur px-2 py-0.5 text-xs font-mono text-amber-300 border border-slate-700/80">
             <Star className="h-3 w-3 fill-amber-300" />
             {media.averageScore}%
+          </span>
+        ) : null}
+        {media.isAdult ? (
+          <span className="absolute bottom-2 left-2 rounded-md bg-rose-600/90 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
+            18+ NSFW
           </span>
         ) : null}
         {inList && (

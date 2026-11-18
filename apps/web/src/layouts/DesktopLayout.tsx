@@ -70,7 +70,6 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
     '/new-releases',
     '/news',
     '/search',
-    '/settings',
   ].some((p) => location.pathname.startsWith(p));
 
   useEffect(() => {
@@ -316,7 +315,6 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
                 { to: '/new-releases', label: 'New Releases', icon: Sparkles },
                 { to: '/news', label: 'News', icon: Newspaper },
                 { to: '/search', label: 'Search', icon: Search },
-                { to: '/settings', label: 'Settings', icon: Settings },
               ].map(({ to, label, icon: Icon }) => (
                 <NavLink
                   key={to}

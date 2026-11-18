@@ -25,12 +25,13 @@ export function MediaCard({
   onEdit,
 }: MediaCardProps) {
   const titleLang = useSettingsStore((s) => s.settings.title_language);
+  const shortTitles = useLocalPrefsStore((s) => s.shortTitles);
   const scoreFormatOverride = useLocalPrefsStore((s) => s.scoreFormatOverride);
   const effectiveScoreFormat =
     scoreFormatOverride === 'ACCOUNT' ? scoreFormat : scoreFormatOverride;
 
   const { media } = entry;
-  const title = formatMediaTitle(media, titleLang);
+  const title = formatMediaTitle(media, titleLang, shortTitles);
   const total = media.type === 'ANIME' ? media.episodes : media.chapters;
   const unit = media.type === 'ANIME' ? 'Ep' : 'Ch';
   const pct = total && total > 0 ? Math.min(100, Math.round((entry.progress / total) * 100)) : 0;
@@ -163,6 +164,11 @@ export function MediaCard({
           <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md bg-slate-950/85 backdrop-blur px-2 py-0.5 text-xs font-mono text-amber-300 border border-slate-700/80">
             <Star className="h-3 w-3 fill-amber-300" />
             {formatScore(entry.score, effectiveScoreFormat)}
+          </span>
+        ) : null}
+        {media.isAdult ? (
+          <span className="absolute bottom-2 left-2 rounded-md bg-rose-600/90 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
+            18+ NSFW
           </span>
         ) : null}
       </Link>

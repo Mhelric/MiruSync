@@ -14,17 +14,45 @@ export function createProvider(session: AuthSession, apiBase = ''): MediaProvide
   return new AniListProvider(session.providerAccessToken);
 }
 
+export function shortenTitleText(raw: string, maxLength = 38): string {
+  const clean = raw.trim();
+  if (clean.length <= maxLength) return clean;
+
+  // Strip verbose subtitle suffixes if the main title remains meaningful
+  const stripped = clean
+    .replace(/\s*[:\-–—]\s+.+$/, '')
+    .replace(/\s+\([^)]*\)\s*$/, '')
+    .trim();
+  if (stripped.length >= 8 && stripped.length <= maxLength) {
+    return stripped;
+  }
+
+  const base = stripped.length >= 8 ? stripped : clean;
+  const cut = base.slice(0, maxLength - 1);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > 12 ? cut.slice(0, lastSpace) : cut).trim()}…`;
+}
+
 export function formatMediaTitle(
   media: Pick<Media, 'title'>,
-  preferred: 'romaji' | 'english' | 'native' = 'romaji'
+  preferred: 'romaji' | 'english' | 'native' = 'romaji',
+  short = false
 ): string {
-  if (preferred === 'english') {
-    return media.title.english || media.title.romaji || media.title.native || 'Untitled';
-  }
-  if (preferred === 'native') {
-    return media.title.native || media.title.romaji || media.title.english || 'Untitled';
-  }
-  return media.title.romaji || media.title.english || media.title.native || 'Untitled';
+  const primary =
+    preferred === 'english'
+      ? media.title.english || media.title.romaji || media.title.native || 'Untitled'
+      : preferred === 'native'
+        ? media.title.native || media.title.romaji || media.title.english || 'Untitled'
+        : media.title.romaji || media.title.english || media.title.native || 'Untitled';
+
+  if (!short || primary.length <= 36) return primary;
+
+  // Prefer the shortest available Latin title if primary is very long
+  const candidates = [media.title.english, media.title.romaji].filter(
+    (t): t is string => Boolean(t && t.trim().length > 2)
+  );
+  const shortest = candidates.sort((a, b) => a.length - b.length)[0] ?? primary;
+  return shortenTitleText(shortest, 38);
 }
 
 export function formatScore(score100?: number, format: ScoreFormat = 'POINT_10'): string {

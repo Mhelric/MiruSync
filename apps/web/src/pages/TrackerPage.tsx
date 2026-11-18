@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { LayoutGrid, List, Rows3, Search, Shuffle } from 'lucide-react';
+import { LayoutGrid, List, Rows3, Search, SlidersHorizontal } from 'lucide-react';
 import {
   formatMediaTitle,
   useAuthStore,
@@ -14,7 +14,6 @@ import {
 import { DesktopLayout } from '../layouts/DesktopLayout';
 import { MediaCard } from '../components/MediaCard';
 import { EditEntryModal } from '../components/EditEntryModal';
-import { RandomPickerModal } from '../components/RandomPickerModal';
 
 const STATUS_TABS: { key: ListStatus | 'ALL'; animeLabel: string; mangaLabel: string }[] = [
   { key: 'ALL', animeLabel: 'All', mangaLabel: 'All' },
@@ -44,7 +43,13 @@ export function TrackerPage({ type }: { type: MediaType }) {
   const [sortBy, setSortBy] = useState<SortKey>('updated');
   const [layout, setLayout] = useState<'grid' | 'list' | 'compact'>(defaultLayout);
   const [editing, setEditing] = useState<ListEntry | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const activeFilterCount =
+    (formatFilter ? 1 : 0) +
+    (genreFilter ? 1 : 0) +
+    (yearFilter ? 1 : 0) +
+    (sortBy !== 'updated' ? 1 : 0);
 
   useEffect(() => {
     setLayout(defaultLayout);
@@ -142,70 +147,37 @@ export function TrackerPage({ type }: { type: MediaType }) {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="h-3.5 w-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
                 placeholder="Filter list…"
-                className="rounded-lg border border-slate-800 bg-slate-900/70 pl-8 pr-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 w-44"
+                className="w-full sm:w-48 rounded-lg border border-slate-800 bg-slate-900/70 pl-8 pr-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500"
               />
             </div>
 
-            <select
-              value={formatFilter}
-              onChange={(e) => setFormatFilter(e.target.value)}
-              className="rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-1.5 text-xs text-slate-200"
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((prev) => !prev)}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer shrink-0 ${
+                filtersOpen || activeFilterCount > 0
+                  ? 'border-sky-500/40 bg-sky-500/15 text-sky-300'
+                  : 'border-slate-800 bg-slate-900/70 text-slate-300 hover:border-slate-700'
+              }`}
             >
-              <option value="">All Formats</option>
-              {availableFormats.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              <span>Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="rounded-full bg-sky-500 px-1.5 py-0.2 text-[10px] font-bold text-slate-950">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
 
-            <select
-              value={genreFilter}
-              onChange={(e) => setGenreFilter(e.target.value)}
-              className="rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-1.5 text-xs text-slate-200"
-            >
-              <option value="">All Genres</option>
-              {availableGenres.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={yearFilter}
-              onChange={(e) => setYearFilter(e.target.value)}
-              className="rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-1.5 text-xs text-slate-200"
-            >
-              <option value="">All Years</option>
-              {availableYears.map((y) => (
-                <option key={y} value={String(y)}>
-                  {y}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortKey)}
-              className="rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-1.5 text-xs text-slate-200"
-            >
-              <option value="updated">Last Updated</option>
-              <option value="title">Title</option>
-              <option value="score">Score</option>
-              <option value="progress">Progress</option>
-              {type === 'ANIME' && <option value="airing">Airing Soon</option>}
-            </select>
-
-            <div className="flex rounded-lg border border-slate-800 bg-slate-900/70 p-0.5">
+            <div className="flex rounded-lg border border-slate-800 bg-slate-900/70 p-0.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setLayout('grid')}
@@ -237,27 +209,88 @@ export function TrackerPage({ type }: { type: MediaType }) {
                 <Rows3 className="h-4 w-4" />
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setPickerOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1.5 text-xs font-medium text-sky-300 cursor-pointer"
-              title="Pick a random title from your list"
-            >
-              <Shuffle className="h-3.5 w-3.5" />
-              Random Pick
-            </button>
           </div>
         </div>
 
+        {/* Collapsible Filter Panel */}
+        {filtersOpen && (
+          <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <select
+              value={formatFilter}
+              onChange={(e) => setFormatFilter(e.target.value)}
+              className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
+            >
+              <option value="">All Formats</option>
+              {availableFormats.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={genreFilter}
+              onChange={(e) => setGenreFilter(e.target.value)}
+              className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
+            >
+              <option value="">All Genres</option>
+              {availableGenres.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={yearFilter}
+              onChange={(e) => setYearFilter(e.target.value)}
+              className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
+            >
+              <option value="">All Years</option>
+              {availableYears.map((y) => (
+                <option key={y} value={String(y)}>
+                  {y}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+              className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
+            >
+              <option value="updated">Sort: Last Updated</option>
+              <option value="title">Sort: Title</option>
+              <option value="score">Sort: Score</option>
+              <option value="progress">Sort: Progress</option>
+              {type === 'ANIME' && <option value="airing">Sort: Airing Soon</option>}
+            </select>
+
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFormatFilter('');
+                  setGenreFilter('');
+                  setYearFilter('');
+                  setSortBy('updated');
+                }}
+                className="col-span-2 sm:col-span-4 text-left text-[11px] text-sky-400 hover:underline cursor-pointer px-1"
+              >
+                Reset filters
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Status Tabs */}
-        <div className="flex flex-wrap gap-1.5 border-b border-slate-800/80 pb-3">
+        <div className="flex flex-nowrap overflow-x-auto sm:flex-wrap gap-1.5 border-b border-slate-800/80 pb-3">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.key}
               type="button"
               onClick={() => setActiveStatus(tab.key)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                 activeStatus === tab.key
                   ? 'bg-sky-500 text-slate-950 font-semibold'
                   : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -332,13 +365,6 @@ export function TrackerPage({ type }: { type: MediaType }) {
           onDelete={(mediaId) => deleteEntry.mutate({ mediaId, type })}
         />
       )}
-
-      <RandomPickerModal
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        entries={entries ?? []}
-        defaultType={type}
-      />
     </DesktopLayout>
   );
 }

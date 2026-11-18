@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BookOpen,
+  Settings,
   Sparkles,
   Star,
   Tv,
@@ -771,6 +772,14 @@ export function ProfilePage() {
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 {new Date().getFullYear()} Recap
+              </Link>
+
+              <Link
+                to="/settings"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/80 hover:border-slate-600 px-3.5 py-2 text-xs font-medium text-slate-200 transition-colors"
+              >
+                <Settings className="h-3.5 w-3.5" />
+                Settings
               </Link>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, ChevronRight, Flame, Shuffle, Star, Tv } from 'lucide-react';
+import { BookOpen, ChevronRight, Flame, Star, Tv } from 'lucide-react';
 import {
   AniListProvider,
   formatMediaTitle,
@@ -18,7 +18,6 @@ import { DesktopLayout } from '../layouts/DesktopLayout';
 import { MediaCard } from '../components/MediaCard';
 import { DiscoverCard } from '../components/DiscoverCard';
 import { EditEntryModal } from '../components/EditEntryModal';
-import { RandomPickerModal } from '../components/RandomPickerModal';
 
 export function HomePage() {
   const session = useAuthStore((s) => s.session);
@@ -39,7 +38,6 @@ export function HomePage() {
   const deleteEntry = useDeleteEntry();
   const [editing, setEditing] = useState<ListEntry | null>(null);
   const [heroIdx, setHeroIdx] = useState(0);
-  const [pickerOpen, setPickerOpen] = useState(false);
 
   const { data: seasonalData } = useQuery({
     queryKey: ['homeSeasonalBanners'],
@@ -102,101 +100,125 @@ export function HomePage() {
     <DesktopLayout>
       <div className="space-y-8">
         {/* Rotating Seasonal Trending Hero Banner + Greeting */}
-        <section className="hero-banner relative overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/70 min-h-[240px] flex flex-col justify-between p-6 md:p-8 shadow-2xl">
+        <section className="hero-banner relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800/80 bg-slate-900/70 sm:min-h-[240px] flex flex-col justify-between shadow-2xl">
+          {/* Desktop full-bleed background */}
           {heroSlides.map((slide, idx) => (
             <img
               key={slide.id}
               src={slide.bannerUrl}
               alt=""
               aria-hidden="true"
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
+              className={`hidden sm:block absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
                 idx === heroIdx ? 'opacity-45' : 'opacity-0'
               }`}
             />
           ))}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/75 to-slate-950/40 pointer-events-none" />
+          <div className="hidden sm:block absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/75 to-slate-950/40 pointer-events-none" />
 
-          <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-mono uppercase tracking-wider text-sky-400">
-                Welcome back, {session?.user.name}
-              </p>
-              {currentHero ? (
-                <div className="mt-2 max-w-2xl space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-mono text-amber-300">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/20 border border-sky-500/30 px-2.5 py-0.5 text-sky-300">
-                      <Flame className="h-3 w-3" />
-                      Trending Now
-                    </span>
-                    {currentHero.averageScore && (
-                      <span className="inline-flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-amber-300" />
-                        {currentHero.averageScore}%
-                      </span>
-                    )}
-                  </div>
-                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
-                    {formatMediaTitle(currentHero, titleLang)}
-                  </h1>
-                  {currentHero.synopsis && (
-                    <p className="text-xs md:text-sm text-slate-300 line-clamp-2">
-                      {currentHero.synopsis.replace(/<[^>]+>/g, '')}
-                    </p>
+          {/* Mobile crisp top banner image */}
+          {currentHero?.bannerUrl && (
+            <div className="sm:hidden relative h-36 w-full overflow-hidden">
+              <img
+                src={currentHero.bannerUrl}
+                alt={formatMediaTitle(currentHero, titleLang)}
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+            </div>
+          )}
+
+          <div className="relative z-10 p-4 sm:p-6 md:p-8 flex flex-col justify-between flex-1 gap-5">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div className="flex items-start gap-3.5 min-w-0">
+                {currentHero?.coverUrl && (
+                  <img
+                    src={currentHero.coverUrl}
+                    alt={formatMediaTitle(currentHero, titleLang)}
+                    className="sm:hidden h-24 w-16 rounded-lg object-cover border border-white/15 shrink-0 -mt-10 relative z-10 shadow-lg"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-sky-400">
+                    Welcome back, {session?.user.name}
+                  </p>
+                  {currentHero ? (
+                    <div className="mt-1.5 max-w-2xl space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs font-mono text-amber-300">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/20 border border-sky-500/30 px-2 py-0.5 text-[11px] text-sky-300">
+                          <Flame className="h-3 w-3" />
+                          Trending Now
+                        </span>
+                        {currentHero.averageScore && (
+                          <span className="inline-flex items-center gap-1">
+                            <Star className="h-3 w-3 fill-amber-300" />
+                            {currentHero.averageScore}%
+                          </span>
+                        )}
+                      </div>
+                      <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-tight text-white line-clamp-2">
+                        {formatMediaTitle(currentHero, titleLang)}
+                      </h1>
+                      {currentHero.synopsis && (
+                        <p className="text-xs md:text-sm text-slate-300 line-clamp-2">
+                          {currentHero.synopsis.replace(/<[^>]+>/g, '')}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <h1 className="mt-2 text-2xl font-bold tracking-tight text-white">
+                      Pick up right where you left off.
+                    </h1>
                   )}
                 </div>
+              </div>
+
+              <div className="flex gap-2.5 self-start">
+                <div className="rounded-xl sm:rounded-2xl backdrop-blur-md border border-white/10 bg-slate-950/60 px-3.5 py-2 text-center">
+                  <div className="text-lg sm:text-xl font-bold font-mono text-sky-400">
+                    {animeList?.length ?? '—'}
+                  </div>
+                  <div className="text-[11px] text-slate-300">Anime</div>
+                </div>
+                <div className="rounded-xl sm:rounded-2xl backdrop-blur-md border border-white/10 bg-slate-950/60 px-3.5 py-2 text-center">
+                  <div className="text-lg sm:text-xl font-bold font-mono text-indigo-400">
+                    {mangaList?.length ?? '—'}
+                  </div>
+                  <div className="text-[11px] text-slate-300">Manga</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              {currentHero && heroTargetId ? (
+                <Link
+                  to={`/media/anime/${encodeURIComponent(heroTargetId)}`}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 px-4 py-2 text-xs font-semibold text-slate-950 transition-colors"
+                >
+                  View Details
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
               ) : (
-                <h1 className="mt-2 text-2xl font-bold tracking-tight text-white">
-                  Pick up right where you left off.
-                </h1>
+                <div />
+              )}
+
+              {heroSlides.length > 1 && (
+                <div className="flex items-center gap-1.5">
+                  {heroSlides.map((s, idx) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setHeroIdx(idx)}
+                      aria-label={`Show ${formatMediaTitle(s, titleLang)}`}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        idx === heroIdx
+                          ? 'w-5 bg-sky-400'
+                          : 'w-1.5 bg-white/30 hover:bg-white/60'
+                      }`}
+                    />
+                  ))}
+                </div>
               )}
             </div>
-
-            <div className="flex gap-3">
-              <div className="rounded-2xl backdrop-blur-md border border-white/10 bg-slate-950/60 px-4 py-2.5 text-center">
-                <div className="text-xl font-bold font-mono text-sky-400">
-                  {animeList?.length ?? '—'}
-                </div>
-                <div className="text-[11px] text-slate-300">Anime</div>
-              </div>
-              <div className="rounded-2xl backdrop-blur-md border border-white/10 bg-slate-950/60 px-4 py-2.5 text-center">
-                <div className="text-xl font-bold font-mono text-indigo-400">
-                  {mangaList?.length ?? '—'}
-                </div>
-                <div className="text-[11px] text-slate-300">Manga</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative z-10 mt-6 flex items-center justify-between gap-4">
-            {currentHero && heroTargetId ? (
-              <Link
-                to={`/media/anime/${encodeURIComponent(heroTargetId)}`}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 px-4 py-2 text-xs font-semibold text-slate-950 transition-colors"
-              >
-                View Details
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Link>
-            ) : (
-              <div />
-            )}
-
-            {heroSlides.length > 1 && (
-              <div className="flex items-center gap-1.5">
-                {heroSlides.map((s, idx) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setHeroIdx(idx)}
-                    aria-label={`Show ${formatMediaTitle(s, titleLang)}`}
-                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                      idx === heroIdx
-                        ? 'w-5 bg-sky-400'
-                        : 'w-1.5 bg-white/30 hover:bg-white/60'
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
           </div>
         </section>
 
@@ -207,19 +229,9 @@ export function HomePage() {
               <Tv className="h-4 w-4 text-sky-400 animate-float-idle" />
               Continue Watching
             </h2>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setPickerOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 px-2.5 py-1 text-xs font-medium text-sky-300 cursor-pointer"
-              >
-                <Shuffle className="h-3 w-3" />
-                What should I watch?
-              </button>
-              <Link to="/anime" className="text-xs text-sky-400 hover:underline">
-                View all anime →
-              </Link>
-            </div>
+            <Link to="/anime" className="text-xs text-sky-400 hover:underline shrink-0">
+              View all anime →
+            </Link>
           </div>
 
           {animeLoading ? (
@@ -382,13 +394,6 @@ export function HomePage() {
           }
         />
       )}
-
-      <RandomPickerModal
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        entries={[...(animeList ?? []), ...(mangaList ?? [])]}
-        defaultType="ALL"
-      />
     </DesktopLayout>
   );
 }

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar as CalendarIcon, Clock, Download, Search, Star } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Search, Star } from 'lucide-react';
 import {
-  buildIcsCalendar,
   formatCountdown,
   formatMediaTitle,
   useAiringSchedule,
   useAuthStore,
+  useLocalPrefsStore,
   useMediaList,
   useSettingsStore,
   type AiringScheduleItem,
@@ -33,6 +33,7 @@ function getCurrentWeekDates(): Date[] {
 export function CalendarPage() {
   const session = useAuthStore((s) => s.session);
   const titleLang = useSettingsStore((s) => s.settings.title_language);
+  const shortTitles = useLocalPrefsStore((s) => s.shortTitles);
   const { data: scheduleData, isLoading, isError, refetch } = useAiringSchedule();
   const { data: animeList } = useMediaList('ANIME');
 
@@ -92,28 +93,17 @@ export function CalendarPage() {
     return columns;
   }, [filteredItems]);
 
-  function handleExportIcs() {
-    const ics = buildIcsCalendar(filteredItems);
-    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'mirusync-schedule.ics';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   const dayItems = byDay[selectedDay] ?? [];
   const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const nowSec = Math.floor(clock.getTime() / 1000);
 
   return (
     <DesktopLayout>
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Top Bar with Live Clock & Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2.5">
               <CalendarIcon className="h-5 w-5 text-sky-400" />
               Airing Schedule
             </h1>
@@ -130,19 +120,19 @@ export function CalendarPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="h-3.5 w-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filter schedule…"
-                className="rounded-lg border border-slate-800 bg-slate-900/70 pl-8 pr-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 w-44"
+                className="w-full sm:w-44 rounded-lg border border-slate-800 bg-slate-900/70 pl-8 pr-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500"
               />
             </div>
 
-            <div className="flex rounded-lg border border-slate-800 bg-slate-900 p-1 text-xs">
+            <div className="flex rounded-lg border border-slate-800 bg-slate-900 p-1 text-xs shrink-0">
               <button
                 type="button"
                 onClick={() => setMyListOnly(false)}
@@ -162,21 +152,11 @@ export function CalendarPage() {
                 My List
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={handleExportIcs}
-              disabled={filteredItems.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 hover:border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-200 disabled:opacity-40 cursor-pointer"
-            >
-              <Download className="h-3.5 w-3.5" />
-              .ics
-            </button>
           </div>
         </div>
 
-        {/* Horizontal Day Selector Strip (Miruro-inspired) */}
-        <div className="grid grid-cols-7 gap-2">
+        {/* Horizontal Day Selector Strip */}
+        <div className="flex gap-2 overflow-x-auto pb-1 md:grid md:grid-cols-7 md:overflow-visible">
           {WEEKDAYS.map((day, idx) => {
             const active = idx === selectedDay;
             const isToday = idx === todayIdx;
@@ -188,9 +168,9 @@ export function CalendarPage() {
                 key={day}
                 type="button"
                 onClick={() => setSelectedDay(idx)}
-                className={`relative rounded-2xl border p-3 text-left transition-all duration-200 cursor-pointer ${
+                className={`min-w-[92px] shrink-0 md:min-w-0 rounded-2xl border p-3 text-left transition-all duration-200 cursor-pointer ${
                   active
-                    ? 'border-sky-400/60 bg-sky-500/15 shadow-lg shadow-sky-500/10 scale-[1.01]'
+                    ? 'border-sky-400/60 bg-sky-500/15 shadow-lg shadow-sky-500/10'
                     : 'border-slate-800/80 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-900'
                 }`}
               >
@@ -203,17 +183,17 @@ export function CalendarPage() {
                     {day}
                   </span>
                   {isToday && (
-                    <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald-300">
+                    <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald-300 leading-none">
                       Today
                     </span>
                   )}
                 </div>
 
-                <div className="mt-1 flex items-baseline justify-between">
+                <div className="mt-1.5 flex items-baseline justify-between gap-1">
                   <span className="text-lg font-bold font-mono text-slate-100">
                     {dateNum}
                   </span>
-                  <span className="text-[11px] font-mono text-slate-400">
+                  <span className="text-[11px] font-mono text-slate-400 whitespace-nowrap">
                     {count} {count === 1 ? 'ep' : 'eps'}
                   </span>
                 </div>
@@ -259,12 +239,13 @@ export function CalendarPage() {
                 session?.provider === 'mal' && item.media.malId
                   ? `mal:${item.media.malId}`
                   : item.media.id;
+              const title = formatMediaTitle(item.media, titleLang, shortTitles);
 
               return (
                 <Link
                   key={item.id}
                   to={`/media/anime/${encodeURIComponent(targetId)}`}
-                  className="group relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 hover:border-sky-500/50 p-4 flex items-center gap-4 transition-all duration-200"
+                  className="group relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 hover:border-sky-500/50 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 transition-all duration-200"
                 >
                   {item.media.bannerUrl && (
                     <img
@@ -275,8 +256,31 @@ export function CalendarPage() {
                     />
                   )}
 
-                  {/* Airing Time Column */}
-                  <div className="relative z-10 w-20 shrink-0 text-center border-r border-slate-800/80 pr-4">
+                  {/* Mobile Top Row: Time + Status + Episode */}
+                  <div className="relative z-10 flex sm:hidden items-center justify-between gap-2 pb-2 border-b border-slate-800/70">
+                    <div className="flex items-center gap-2 font-mono">
+                      <span className="text-sm font-bold text-sky-400">{timeStr}</span>
+                      <span
+                        className={`text-[11px] ${
+                          aired ? 'text-emerald-400' : 'text-amber-300'
+                        }`}
+                      >
+                        {aired ? '· Aired' : `· in ${formatCountdown(item.airingAt)}`}
+                      </span>
+                    </div>
+                    <span
+                      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] font-mono font-semibold border ${
+                        aired
+                          ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                          : 'bg-sky-500/15 border-sky-500/30 text-sky-300'
+                      }`}
+                    >
+                      Ep {item.episode}
+                    </span>
+                  </div>
+
+                  {/* Desktop Airing Time Column */}
+                  <div className="hidden sm:block relative z-10 w-20 shrink-0 text-center border-r border-slate-800/80 pr-4">
                     <div className="text-base font-bold font-mono text-sky-400">
                       {timeStr}
                     </div>
@@ -289,46 +293,47 @@ export function CalendarPage() {
                     </div>
                   </div>
 
-                  {/* Cover */}
-                  <img
-                    src={
-                      item.media.coverUrl ||
-                      'https://placehold.co/64x90/0f172a/64748b?text=?'
-                    }
-                    alt={formatMediaTitle(item.media, titleLang)}
-                    className="relative z-10 h-16 w-12 rounded-lg object-cover shrink-0 bg-slate-800 border border-slate-700/60"
-                  />
+                  {/* Cover + Title + Genres */}
+                  <div className="relative z-10 flex items-center gap-3 flex-1 min-w-0">
+                    <img
+                      src={
+                        item.media.coverUrl ||
+                        'https://placehold.co/64x90/0f172a/64748b?text=?'
+                      }
+                      alt={title}
+                      className="h-16 w-12 rounded-lg object-cover shrink-0 bg-slate-800 border border-slate-700/60"
+                    />
 
-                  {/* Title & Genres */}
-                  <div className="relative z-10 flex-1 min-w-0">
-                    <h2 className="text-sm sm:text-base font-semibold text-slate-100 group-hover:text-sky-400 truncate transition-colors">
-                      {formatMediaTitle(item.media, titleLang)}
-                    </h2>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                      {item.media.format && (
-                        <span className="rounded bg-slate-800/90 px-1.5 py-0.5 text-[10px] font-mono text-slate-300">
-                          {item.media.format}
-                        </span>
-                      )}
-                      {item.media.averageScore && (
-                        <span className="inline-flex items-center gap-1 rounded bg-slate-800/90 px-1.5 py-0.5 text-[10px] font-mono text-amber-300">
-                          <Star className="h-2.5 w-2.5 fill-amber-300" />
-                          {item.media.averageScore}%
-                        </span>
-                      )}
-                      {(item.media.genres ?? []).slice(0, 3).map((g) => (
-                        <span
-                          key={g}
-                          className="rounded-full border border-slate-700/70 bg-slate-950/60 px-2 py-0.5 text-[10px] text-slate-300"
-                        >
-                          {g}
-                        </span>
-                      ))}
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-sm sm:text-base font-semibold text-slate-100 group-hover:text-sky-400 line-clamp-2 sm:truncate transition-colors">
+                        {title}
+                      </h2>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        {item.media.format && (
+                          <span className="rounded bg-slate-800/90 px-1.5 py-0.5 text-[10px] font-mono text-slate-300">
+                            {item.media.format}
+                          </span>
+                        )}
+                        {item.media.averageScore && (
+                          <span className="inline-flex items-center gap-1 rounded bg-slate-800/90 px-1.5 py-0.5 text-[10px] font-mono text-amber-300">
+                            <Star className="h-2.5 w-2.5 fill-amber-300" />
+                            {item.media.averageScore}%
+                          </span>
+                        )}
+                        {(item.media.genres ?? []).slice(0, 2).map((g) => (
+                          <span
+                            key={g}
+                            className="rounded-full border border-slate-700/70 bg-slate-950/60 px-2 py-0.5 text-[10px] text-slate-300"
+                          >
+                            {g}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Episode Pill */}
-                  <div className="relative z-10 shrink-0">
+                  {/* Desktop Episode Pill */}
+                  <div className="hidden sm:block relative z-10 shrink-0">
                     <span
                       className={`inline-flex items-center rounded-xl px-3 py-1.5 text-xs font-mono font-semibold border ${
                         aired

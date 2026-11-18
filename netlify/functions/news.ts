@@ -6,6 +6,19 @@ const JIKAN_NEWS_URLS = [
   'https://api.jikan.moe/v4/anime/21/news',
 ];
 
+let cachedNews: { items: unknown[]; generatedAt: number } | null = null;
+let cacheExpiresAt = 0;
+
+function extractRssImage(block: string): string | undefined {
+  const match =
+    block.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i) ||
+    block.match(/<enclosure[^>]+url=["']([^"']+)["']/i) ||
+    block.match(/<img[^>]+src=["']([^"']+)["']/i);
+  const url = match?.[1]?.trim();
+  if (!url) return undefined;
+  return url.startsWith('//') ? `https:${url}` : url;
+}
+
 function decodeEntities(str: string): string {
   return str
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
@@ -37,9 +50,10 @@ async function fetchOgImage(articleUrl: string): Promise<string | undefined> {
   try {
     const res = await fetch(articleUrl, {
       headers: {
-        'User-Agent': 'MiruSync/1.0 (+https://mirusync.netlify.app)',
+        'User-Agent': 'MiruSync/1.0 (+https://mirusync.vercel.app)',
+        Range: 'bytes=0-16384',
       },
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(900),
     });
     if (!res.ok) return undefined;
     const html = await res.text();
@@ -68,7 +82,7 @@ async function fetchJikanNews(): Promise<
 > {
   const results = await Promise.allSettled(
     JIKAN_NEWS_URLS.map(async (u) => {
-      const res = await fetch(u, { signal: AbortSignal.timeout(3000) });
+      const res = await fetch(u, { signal: AbortSignal.timeout(1500) });
       if (!res.ok) return [];
       const json = (await res.json()) as {
         data?: Array<{
@@ -96,13 +110,21 @@ async function fetchJikanNews(): Promise<
 }
 
 export default async function handler(_req: Request, _context: Context) {
+  if (cachedNews && Date.now() < cacheExpiresAt) {
+    return Response.json(cachedNews, {
+      headers: {
+        'Cache-Control': 'public, max-age=600, s-maxage=900',
+      },
+    });
+  }
+
   try {
     const [annRes, jikanItems] = await Promise.all([
       fetch(ANN_RSS_URL, {
         headers: {
-          'User-Agent': 'MiruSync/1.0 (+https://mirusync.netlify.app)',
+          'User-Agent': 'MiruSync/1.0 (+https://mirusync.vercel.app)',
         },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(3500),
       }),
       fetchJikanNews(),
     ]);
@@ -119,39 +141,48 @@ export default async function handler(_req: Request, _context: Context) {
       const link = extractTag(raw, 'link');
       const pubDate = extractTag(raw, 'pubDate');
       const description = summarizeText(extractTag(raw, 'description'));
+      const rssImage = extractRssImage(raw);
 
       return {
         id: link || `ann-${idx}`,
         title,
         link,
         snippet: description,
+        rssImage,
         publishedAt: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
         source: 'Anime News Network',
       };
     });
 
-    // Scrape og:image from the top 12 ANN articles in parallel
-    const ogImages = await Promise.all(
-      rawAnn.slice(0, 12).map((item) => fetchOgImage(item.link))
-    );
+    const missingImgIndexes = rawAnn
+      .map((item, idx) => (!item.rssImage ? idx : -1))
+      .filter((idx) => idx !== -1)
+      .slice(0, 6);
 
-    const annItems = rawAnn.map((item, idx) => ({
+    const fetchedImages = await Promise.all(
+      missingImgIndexes.map((idx) => fetchOgImage(rawAnn[idx].link))
+    );
+    const ogByIndex = new Map<number, string | undefined>();
+    missingImgIndexes.forEach((idx, i) => ogByIndex.set(idx, fetchedImages[i]));
+
+    const annItems = rawAnn.map(({ rssImage, ...item }, idx) => ({
       ...item,
-      imageUrl: idx < 12 ? ogImages[idx] : undefined,
+      imageUrl: rssImage ?? ogByIndex.get(idx),
     }));
 
     const merged = [...annItems, ...jikanItems].sort(
       (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt)
     );
 
-    return Response.json(
-      { items: merged, generatedAt: Date.now() },
-      {
-        headers: {
-          'Cache-Control': 'public, max-age=900, s-maxage=900',
-        },
-      }
-    );
+    const payload = { items: merged, generatedAt: Date.now() };
+    cachedNews = payload;
+    cacheExpiresAt = Date.now() + 10 * 60 * 1000;
+
+    return Response.json(payload, {
+      headers: {
+        'Cache-Control': 'public, max-age=600, s-maxage=900',
+      },
+    });
   } catch (err) {
     return Response.json(
       { error: err instanceof Error ? err.message : 'Failed to load news' },

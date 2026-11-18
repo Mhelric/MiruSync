@@ -168,6 +168,8 @@ export function SettingsPage() {
   const setScoreFormatOverride = useLocalPrefsStore((s) => s.setScoreFormatOverride);
   const checkFrequency = useLocalPrefsStore((s) => s.checkFrequency);
   const setCheckFrequency = useLocalPrefsStore((s) => s.setCheckFrequency);
+  const shortTitles = useLocalPrefsStore((s) => s.shortTitles);
+  const setShortTitles = useLocalPrefsStore((s) => s.setShortTitles);
 
   const { data: animeList } = useMediaList('ANIME');
   const { data: mangaList } = useMediaList('MANGA');
@@ -394,6 +396,23 @@ export function SettingsPage() {
                 );
               })}
             </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-800/70">
+            <div>
+              <div className="text-sm font-medium text-slate-200">
+                Shorten Long Titles
+              </div>
+              <div className="text-xs text-slate-400">
+                Prefer shorter titles and trim long subtitles on cards
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={shortTitles}
+              onChange={(e) => setShortTitles(e.target.checked)}
+              className="h-4 w-4 accent-sky-500 cursor-pointer"
+            />
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-800/70">

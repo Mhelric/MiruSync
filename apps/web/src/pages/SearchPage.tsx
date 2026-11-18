@@ -18,7 +18,9 @@ const GENRES = [
   'Adventure',
   'Comedy',
   'Drama',
+  'Ecchi',
   'Fantasy',
+  'Hentai',
   'Horror',
   'Mystery',
   'Romance',
@@ -170,7 +172,11 @@ export function SearchPage() {
 
           <select
             value={genre}
-            onChange={(e) => setGenre(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setGenre(next);
+              if (next === 'Hentai') setIncludeAdult(true);
+            }}
             className="rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-200"
           >
             <option value="">All Genres</option>

@@ -14,17 +14,21 @@ interface LocalPrefs {
   scoreFormatOverride: ScoreFormatOverride;
   checkFrequency: CheckFrequency;
   recentSearches: string[];
+  shortTitles: boolean;
 }
 
+const DEFAULT_LOCAL_PREFS: LocalPrefs = {
+  scoreFormatOverride: 'ACCOUNT',
+  checkFrequency: '1h',
+  recentSearches: [],
+  shortTitles: true,
+};
+
 function loadLocalPrefs(): LocalPrefs {
-  if (typeof window === 'undefined') {
-    return { scoreFormatOverride: 'ACCOUNT', checkFrequency: '1h', recentSearches: [] };
-  }
+  if (typeof window === 'undefined') return DEFAULT_LOCAL_PREFS;
   try {
     const raw = window.localStorage.getItem(LOCAL_PREFS_KEY);
-    if (!raw) {
-      return { scoreFormatOverride: 'ACCOUNT', checkFrequency: '1h', recentSearches: [] };
-    }
+    if (!raw) return DEFAULT_LOCAL_PREFS;
     const parsed = JSON.parse(raw) as Partial<LocalPrefs>;
     return {
       scoreFormatOverride: parsed.scoreFormatOverride ?? 'ACCOUNT',
@@ -32,9 +36,10 @@ function loadLocalPrefs(): LocalPrefs {
       recentSearches: Array.isArray(parsed.recentSearches)
         ? parsed.recentSearches.slice(0, 8)
         : [],
+      shortTitles: parsed.shortTitles ?? true,
     };
   } catch {
-    return { scoreFormatOverride: 'ACCOUNT', checkFrequency: '1h', recentSearches: [] };
+    return DEFAULT_LOCAL_PREFS;
   }
 }
 
@@ -50,55 +55,40 @@ function saveLocalPrefs(prefs: LocalPrefs) {
 interface LocalPrefsStore extends LocalPrefs {
   setScoreFormatOverride: (format: ScoreFormatOverride) => void;
   setCheckFrequency: (freq: CheckFrequency) => void;
+  setShortTitles: (shortTitles: boolean) => void;
   addRecentSearch: (query: string) => void;
   clearRecentSearches: () => void;
 }
 
-export const useLocalPrefsStore = create<LocalPrefsStore>((set, get) => ({
-  ...loadLocalPrefs(),
-  setScoreFormatOverride: (scoreFormatOverride) => {
+export const useLocalPrefsStore = create<LocalPrefsStore>((set, get) => {
+  const persist = (partial: Partial<LocalPrefs>) => {
     const next: LocalPrefs = {
-      scoreFormatOverride,
-      checkFrequency: get().checkFrequency,
-      recentSearches: get().recentSearches,
+      scoreFormatOverride: partial.scoreFormatOverride ?? get().scoreFormatOverride,
+      checkFrequency: partial.checkFrequency ?? get().checkFrequency,
+      recentSearches: partial.recentSearches ?? get().recentSearches,
+      shortTitles: partial.shortTitles ?? get().shortTitles,
     };
     saveLocalPrefs(next);
-    set({ scoreFormatOverride });
-  },
-  setCheckFrequency: (checkFrequency) => {
-    const next: LocalPrefs = {
-      scoreFormatOverride: get().scoreFormatOverride,
-      checkFrequency,
-      recentSearches: get().recentSearches,
-    };
-    saveLocalPrefs(next);
-    set({ checkFrequency });
-  },
-  addRecentSearch: (query) => {
-    const trimmed = query.trim();
-    if (!trimmed) return;
-    const recentSearches = [
-      trimmed,
-      ...get().recentSearches.filter((q) => q.toLowerCase() !== trimmed.toLowerCase()),
-    ].slice(0, 8);
-    const next: LocalPrefs = {
-      scoreFormatOverride: get().scoreFormatOverride,
-      checkFrequency: get().checkFrequency,
-      recentSearches,
-    };
-    saveLocalPrefs(next);
-    set({ recentSearches });
-  },
-  clearRecentSearches: () => {
-    const next: LocalPrefs = {
-      scoreFormatOverride: get().scoreFormatOverride,
-      checkFrequency: get().checkFrequency,
-      recentSearches: [],
-    };
-    saveLocalPrefs(next);
-    set({ recentSearches: [] });
-  },
-}));
+    set(partial);
+  };
+
+  return {
+    ...loadLocalPrefs(),
+    setScoreFormatOverride: (scoreFormatOverride) => persist({ scoreFormatOverride }),
+    setCheckFrequency: (checkFrequency) => persist({ checkFrequency }),
+    setShortTitles: (shortTitles) => persist({ shortTitles }),
+    addRecentSearch: (query) => {
+      const trimmed = query.trim();
+      if (!trimmed) return;
+      const recentSearches = [
+        trimmed,
+        ...get().recentSearches.filter((q) => q.toLowerCase() !== trimmed.toLowerCase()),
+      ].slice(0, 8);
+      persist({ recentSearches });
+    },
+    clearRecentSearches: () => persist({ recentSearches: [] }),
+  };
+});
 
 export interface UserSettings {
   theme: 'light' | 'dark' | 'system';
