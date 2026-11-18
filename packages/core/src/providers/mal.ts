@@ -1,3 +1,4 @@
+import { AniListProvider, fetchAniListDetailsByMalId } from './anilist';
 import type {
   AppUser,
   EntryUpdate,
@@ -336,13 +337,30 @@ export class MalProvider implements MediaProvider {
   }
 
   async getMedia(id: string, type: MediaType): Promise<Media> {
+    if (id.startsWith('al:')) {
+      return new AniListProvider().getMedia(id, type);
+    }
     const malId = stripMalPrefix(id);
     const resource = type === 'ANIME' ? 'anime' : 'manga';
     const fields = type === 'ANIME' ? MAL_ANIME_FIELDS : MAL_MANGA_FIELDS;
-    const node = await this.request<MalNodeRaw>(
-      `/v2/${resource}/${malId}?fields=${fields}`
-    );
-    return normalizeMalMedia(node, type);
+    const [node, enriched] = await Promise.all([
+      this.request<MalNodeRaw>(`/v2/${resource}/${malId}?fields=${fields}`),
+      fetchAniListDetailsByMalId(Number(malId), type),
+    ]);
+    const base = normalizeMalMedia(node, type);
+    if (!enriched) return base;
+    return {
+      ...enriched,
+      id: base.id,
+      malId: base.malId,
+      title: {
+        romaji: base.title.romaji || enriched.title.romaji,
+        english: base.title.english || enriched.title.english,
+        native: base.title.native || enriched.title.native,
+      },
+      coverUrl: base.coverUrl || enriched.coverUrl,
+      synopsis: base.synopsis || enriched.synopsis,
+    };
   }
 
   async getPopular(

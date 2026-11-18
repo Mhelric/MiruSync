@@ -41,7 +41,7 @@ export function NewsPage() {
 
   return (
     <DesktopLayout>
-      <div className="space-y-5">
+      <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -49,7 +49,7 @@ export function NewsPage() {
               Anime &amp; Manga News
             </h1>
             <p className="text-sm text-slate-400">
-              Latest stories from Anime News Network, filtered for your list.
+              Visual headlines &amp; summaries from Anime News Network and MyAnimeList.
             </p>
           </div>
 
@@ -57,7 +57,7 @@ export function NewsPage() {
             <button
               type="button"
               onClick={() => setTab('all')}
-              className={`rounded-md px-3 py-1.5 font-medium cursor-pointer ${
+              className={`rounded-md px-3 py-1.5 font-medium transition-colors cursor-pointer ${
                 tab === 'all' ? 'bg-sky-500 text-slate-950 font-semibold' : 'text-slate-400'
               }`}
             >
@@ -66,7 +66,7 @@ export function NewsPage() {
             <button
               type="button"
               onClick={() => setTab('foryou')}
-              className={`rounded-md px-3 py-1.5 font-medium cursor-pointer ${
+              className={`rounded-md px-3 py-1.5 font-medium transition-colors cursor-pointer ${
                 tab === 'foryou' ? 'bg-sky-500 text-slate-950 font-semibold' : 'text-slate-400'
               }`}
             >
@@ -76,11 +76,11 @@ export function NewsPage() {
         </div>
 
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="h-24 rounded-xl bg-slate-900/60 border border-slate-800 animate-pulse"
+                className="h-72 rounded-2xl bg-slate-900/60 border border-slate-800 animate-pulse"
               />
             ))}
           </div>
@@ -102,33 +102,54 @@ export function NewsPage() {
               : 'No news stories available.'}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {items.map((item) => (
               <a
                 key={item.id}
                 href={item.link}
                 target="_blank"
                 rel="noreferrer"
-                className="group rounded-xl border border-slate-800/80 bg-slate-900/50 hover:border-slate-700 p-4 flex flex-col justify-between gap-3 transition-colors"
+                className="group rounded-2xl border border-slate-800/80 bg-slate-900/50 hover:border-sky-500/50 overflow-hidden flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5"
               >
                 <div>
-                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-1.5">
-                    <span className="text-sky-400">{item.source}</span>
-                    <span>
-                      {new Date(item.publishedAt).toLocaleDateString()}
+                  <div className="relative aspect-video bg-slate-950 overflow-hidden border-b border-slate-800/70">
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title}
+                        loading="lazy"
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-gradient-to-br from-sky-950 via-slate-900 to-indigo-950 flex items-center justify-center">
+                        <Newspaper className="h-8 w-8 text-sky-400/50" />
+                      </div>
+                    )}
+                    <span className="absolute top-2.5 left-2.5 rounded-md bg-slate-950/85 backdrop-blur px-2 py-0.5 text-[10px] font-mono text-sky-400 border border-slate-700/70">
+                      {item.source}
                     </span>
                   </div>
-                  <h2 className="font-semibold text-sm text-slate-100 group-hover:text-sky-400 transition-colors">
-                    {item.title}
-                  </h2>
-                  {item.snippet && (
-                    <p className="mt-1.5 text-xs text-slate-400 line-clamp-2">
-                      {item.snippet}
-                    </p>
-                  )}
+
+                  <div className="p-4">
+                    <div className="text-[11px] font-mono text-slate-400 mb-1.5">
+                      {new Date(item.publishedAt).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </div>
+                    <h2 className="font-semibold text-sm text-slate-100 group-hover:text-sky-400 line-clamp-2 leading-snug transition-colors">
+                      {item.title}
+                    </h2>
+                    {item.snippet && (
+                      <p className="mt-2 text-xs text-slate-400 line-clamp-3 leading-relaxed">
+                        {item.snippet}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                <div className="inline-flex items-center gap-1 text-xs text-sky-400 font-medium">
+                <div className="px-4 pb-4 pt-1 inline-flex items-center gap-1 text-xs text-sky-400 font-medium">
                   Read full article
                   <ExternalLink className="h-3 w-3" />
                 </div>

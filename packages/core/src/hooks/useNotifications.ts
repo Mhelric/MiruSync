@@ -170,6 +170,15 @@ export async function registerWebPush(
     applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
   });
 
+  const syncRes = await fetch('/api/user-sync', {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: buildSyncHeaders(supabaseJwt),
+    body: JSON.stringify({ pushSubscription: subscription.toJSON() }),
+  });
+
+  if (syncRes.ok) return true;
+
   const client = getSupabaseClient(supabaseUrl, supabaseAnonKey, supabaseJwt);
   if (!client) return false;
 

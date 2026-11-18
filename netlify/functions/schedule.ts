@@ -15,6 +15,9 @@ const SCHEDULE_QUERY = `
           idMal
           title { romaji english native }
           coverImage { large }
+          bannerImage
+          genres
+          averageScore
           format
           episodes
           isAdult
@@ -24,15 +27,24 @@ const SCHEDULE_QUERY = `
   }
 `;
 
-export default async function handler(_req: Request, _context: Context) {
-  const nowSec = Math.floor(Date.now() / 1000);
-  // Start from 24h ago so "just aired" & today's earlier episodes appear cleanly
-  const start = nowSec - 60 * 60 * 24;
-  const end = nowSec + 60 * 60 * 24 * 7;
+function getWeekBoundsUnix(): { start: number; end: number } {
+  const now = new Date();
+  const day = now.getUTCDay(); // 0=Sun..6=Sat
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diffToMonday, 0, 0, 0)
+  );
+  // Pad +/- 12h for timezone edge shifts
+  const start = Math.floor(monday.getTime() / 1000) - 43200;
+  const end = start + 7 * 86400 + 86400;
+  return { start, end };
+}
 
+export default async function handler(_req: Request, _context: Context) {
+  const { start, end } = getWeekBoundsUnix();
   const items: unknown[] = [];
 
-  for (let page = 1; page <= 3; page++) {
+  for (let page = 1; page <= 4; page++) {
     const res = await fetch(ANILIST_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -65,6 +77,9 @@ export default async function handler(_req: Request, _context: Context) {
               idMal?: number | null;
               title?: { romaji?: string; english?: string; native?: string };
               coverImage?: { large?: string };
+              bannerImage?: string | null;
+              genres?: string[] | null;
+              averageScore?: number | null;
               format?: string;
               episodes?: number | null;
               isAdult?: boolean;
@@ -87,6 +102,9 @@ export default async function handler(_req: Request, _context: Context) {
           malId: s.media.idMal ?? undefined,
           title: s.media.title ?? {},
           coverUrl: s.media.coverImage?.large,
+          bannerUrl: s.media.bannerImage ?? undefined,
+          genres: s.media.genres ?? [],
+          averageScore: s.media.averageScore ?? undefined,
           format: s.media.format,
           episodes: s.media.episodes ?? undefined,
         },

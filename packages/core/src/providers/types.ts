@@ -15,6 +15,54 @@ export type ScoreFormat =
   | 'POINT_5'
   | 'POINT_3';
 
+export interface MediaTag {
+  name: string;
+  rank?: number;
+  isSpoiler?: boolean;
+}
+
+export interface MediaRanking {
+  rank: number;
+  type: 'RATED' | 'POPULAR';
+  year?: number;
+  allTime?: boolean;
+  context: string;
+}
+
+export interface MediaRelation {
+  relationType: string;
+  id: string;
+  alId?: number;
+  malId?: number;
+  type: MediaType;
+  title: { romaji?: string; english?: string; native?: string };
+  coverUrl?: string;
+  format?: string;
+  status?: string;
+}
+
+export interface MediaCharacter {
+  id: number;
+  name: string;
+  imageUrl?: string;
+  role?: string;
+  voiceActor?: {
+    id: number;
+    name: string;
+    imageUrl?: string;
+  };
+}
+
+export interface MediaRecommendation {
+  id: string;
+  alId?: number;
+  malId?: number;
+  type: MediaType;
+  title: { romaji?: string; english?: string; native?: string };
+  coverUrl?: string;
+  averageScore?: number;
+}
+
 export interface Media {
   id: string;
   alId?: number;
@@ -43,6 +91,14 @@ export interface Media {
   };
   isAdult: boolean;
   streamingLinks?: { site: string; url: string }[];
+  trailer?: { id: string; site: string };
+  studios?: string[];
+  producers?: string[];
+  tags?: MediaTag[];
+  rankings?: MediaRanking[];
+  relations?: MediaRelation[];
+  characters?: MediaCharacter[];
+  recommendations?: MediaRecommendation[];
 }
 
 export interface ListEntry {

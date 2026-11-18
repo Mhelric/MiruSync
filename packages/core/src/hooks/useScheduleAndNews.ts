@@ -11,6 +11,9 @@ export interface AiringScheduleItem {
     malId?: number;
     title: { romaji?: string; english?: string; native?: string };
     coverUrl?: string;
+    bannerUrl?: string;
+    genres?: string[];
+    averageScore?: number;
     format?: string;
     episodes?: number;
   };
@@ -21,6 +24,7 @@ export interface NewsItem {
   title: string;
   link: string;
   snippet: string;
+  imageUrl?: string;
   publishedAt: string;
   source: string;
 }

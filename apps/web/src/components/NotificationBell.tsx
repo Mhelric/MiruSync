@@ -20,7 +20,7 @@ export function NotificationBell() {
         title="Notifications"
         className="relative rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 p-1.5 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer"
       >
-        <Bell className="h-4 w-4" />
+        <Bell className={`h-4 w-4 ${unreadCount > 0 ? 'animate-bell-ring text-sky-400' : ''}`} />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 h-4 min-w-4 rounded-full bg-sky-500 px-1 text-[10px] font-bold text-slate-950 flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}

@@ -35,6 +35,61 @@ const MEDIA_FRAGMENT = `
   externalLinks { site url type }
 `;
 
+const MEDIA_DETAIL_FIELDS = `
+  ${MEDIA_FRAGMENT}
+  trailer { id site }
+  studios { nodes { name isAnimationStudio } }
+  staff(perPage: 8, sort: [RELEVANCE]) {
+    edges {
+      role
+      node { name { full } }
+    }
+  }
+  tags { name rank isMediaSpoiler }
+  rankings { rank type year allTime context }
+  relations {
+    edges {
+      relationType
+      node {
+        id
+        idMal
+        type
+        title { romaji english native }
+        coverImage { large }
+        format
+        status
+      }
+    }
+  }
+  characters(sort: [ROLE, RELEVANCE], perPage: 12) {
+    edges {
+      role
+      voiceActors(language: JAPANESE, sort: [RELEVANCE]) {
+        id
+        name { full }
+        image { large }
+      }
+      node {
+        id
+        name { full }
+        image { large }
+      }
+    }
+  }
+  recommendations(sort: [RATING_DESC], perPage: 8) {
+    nodes {
+      mediaRecommendation {
+        id
+        idMal
+        type
+        title { romaji english native }
+        coverImage { large }
+        averageScore
+      }
+    }
+  }
+`;
+
 interface AniListMediaRaw {
   id: number;
   idMal?: number | null;
@@ -55,6 +110,60 @@ interface AniListMediaRaw {
   isAdult?: boolean | null;
   nextAiringEpisode?: { episode: number; airingAt: number } | null;
   externalLinks?: { site: string; url: string; type?: string }[] | null;
+  trailer?: { id?: string | null; site?: string | null } | null;
+  studios?: { nodes?: { name: string; isAnimationStudio: boolean }[] | null } | null;
+  staff?: {
+    edges?: { role?: string | null; node?: { name?: { full?: string | null } } }[] | null;
+  } | null;
+  tags?: { name: string; rank?: number | null; isMediaSpoiler?: boolean | null }[] | null;
+  rankings?: {
+    rank: number;
+    type: 'RATED' | 'POPULAR';
+    year?: number | null;
+    allTime?: boolean | null;
+    context: string;
+  }[] | null;
+  relations?: {
+    edges?: Array<{
+      relationType: string;
+      node: {
+        id: number;
+        idMal?: number | null;
+        type: MediaType;
+        title?: { romaji?: string | null; english?: string | null; native?: string | null };
+        coverImage?: { large?: string | null };
+        format?: string | null;
+        status?: string | null;
+      };
+    }> | null;
+  } | null;
+  characters?: {
+    edges?: Array<{
+      role?: string | null;
+      voiceActors?: Array<{
+        id: number;
+        name?: { full?: string | null };
+        image?: { large?: string | null };
+      }> | null;
+      node: {
+        id: number;
+        name?: { full?: string | null };
+        image?: { large?: string | null };
+      };
+    }> | null;
+  } | null;
+  recommendations?: {
+    nodes?: Array<{
+      mediaRecommendation?: {
+        id: number;
+        idMal?: number | null;
+        type: MediaType;
+        title?: { romaji?: string | null; english?: string | null; native?: string | null };
+        coverImage?: { large?: string | null };
+        averageScore?: number | null;
+      } | null;
+    }> | null;
+  } | null;
 }
 
 interface AniListEntryRaw {
@@ -86,6 +195,17 @@ function parseFuzzyDate(iso?: string): { year: number; month: number; day: numbe
 }
 
 export function normalizeAniListMedia(raw: AniListMediaRaw): Media {
+  const studioNodes = raw.studios?.nodes ?? [];
+  const studios = studioNodes.filter((s) => s.isAnimationStudio).map((s) => s.name);
+  const producersFromStudios = studioNodes
+    .filter((s) => !s.isAnimationStudio)
+    .map((s) => s.name);
+  const staffCredits = (raw.staff?.edges ?? [])
+    .map((e) => (e.node?.name?.full ? `${e.node.name.full}${e.role ? ` (${e.role})` : ''}` : ''))
+    .filter(Boolean);
+  const producers =
+    producersFromStudios.length > 0 ? producersFromStudios : staffCredits;
+
   return {
     id: `al:${raw.id}`,
     alId: raw.id,
@@ -110,9 +230,84 @@ export function normalizeAniListMedia(raw: AniListMediaRaw): Media {
     seasonYear: raw.seasonYear ?? undefined,
     nextAiring: raw.nextAiringEpisode ?? undefined,
     isAdult: Boolean(raw.isAdult),
-    streamingLinks: (raw.externalLinks ?? [])
-      .filter((l) => l.type === 'STREAMING')
-      .map((l) => ({ site: l.site, url: l.url })),
+    streamingLinks: (raw.externalLinks ?? []).map((l) => ({
+      site: l.site,
+      url: l.url,
+    })),
+    trailer:
+      raw.trailer?.id && raw.trailer?.site
+        ? { id: raw.trailer.id, site: raw.trailer.site }
+        : undefined,
+    studios: studios.length > 0 ? studios : undefined,
+    producers: producers.length > 0 ? producers : undefined,
+    tags: raw.tags
+      ? raw.tags.map((t) => ({
+          name: t.name,
+          rank: t.rank ?? undefined,
+          isSpoiler: Boolean(t.isMediaSpoiler),
+        }))
+      : undefined,
+    rankings: raw.rankings
+      ? raw.rankings.map((r) => ({
+          rank: r.rank,
+          type: r.type,
+          year: r.year ?? undefined,
+          allTime: Boolean(r.allTime),
+          context: r.context,
+        }))
+      : undefined,
+    relations: raw.relations?.edges
+      ? raw.relations.edges.map((e) => ({
+          relationType: e.relationType,
+          id: `al:${e.node.id}`,
+          alId: e.node.id,
+          malId: e.node.idMal ?? undefined,
+          type: e.node.type,
+          title: {
+            romaji: e.node.title?.romaji ?? undefined,
+            english: e.node.title?.english ?? undefined,
+            native: e.node.title?.native ?? undefined,
+          },
+          coverUrl: e.node.coverImage?.large ?? undefined,
+          format: e.node.format ?? undefined,
+          status: e.node.status ?? undefined,
+        }))
+      : undefined,
+    characters: raw.characters?.edges
+      ? raw.characters.edges.map((e) => ({
+          id: e.node.id,
+          name: e.node.name?.full ?? 'Unknown',
+          imageUrl: e.node.image?.large ?? undefined,
+          role: e.role ?? undefined,
+          voiceActor: e.voiceActors?.[0]
+            ? {
+                id: e.voiceActors[0].id,
+                name: e.voiceActors[0].name?.full ?? 'Unknown',
+                imageUrl: e.voiceActors[0].image?.large ?? undefined,
+              }
+            : undefined,
+        }))
+      : undefined,
+    recommendations: raw.recommendations?.nodes
+      ? raw.recommendations.nodes
+          .filter((n) => Boolean(n.mediaRecommendation))
+          .map((n) => {
+            const rec = n.mediaRecommendation!;
+            return {
+              id: `al:${rec.id}`,
+              alId: rec.id,
+              malId: rec.idMal ?? undefined,
+              type: rec.type,
+              title: {
+                romaji: rec.title?.romaji ?? undefined,
+                english: rec.title?.english ?? undefined,
+                native: rec.title?.native ?? undefined,
+              },
+              coverUrl: rec.coverImage?.large ?? undefined,
+              averageScore: rec.averageScore ?? undefined,
+            };
+          })
+      : undefined,
   };
 }
 
@@ -129,6 +324,36 @@ function normalizeAniListEntry(raw: AniListEntryRaw): ListEntry {
     notes: raw.notes ?? undefined,
     updatedAt: (raw.updatedAt ?? Math.floor(Date.now() / 1000)) * 1000,
   };
+}
+
+export async function fetchAniListDetailsByMalId(
+  malId: number,
+  type: MediaType
+): Promise<Media | null> {
+  try {
+    const res = await fetch(ANILIST_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+          query ($idMal: Int!, $type: MediaType!) {
+            Media(idMal: $idMal, type: $type) {
+              ${MEDIA_DETAIL_FIELDS}
+            }
+          }
+        `,
+        variables: { idMal: malId, type },
+      }),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { data?: { Media?: AniListMediaRaw } };
+    return json.data?.Media ? normalizeAniListMedia(json.data.Media) : null;
+  } catch {
+    return null;
+  }
 }
 
 function stripIdPrefix(id: string): number {
@@ -401,7 +626,7 @@ export class AniListProvider implements MediaProvider {
       `
       query ($id: Int!) {
         Media(id: $id) {
-          ${MEDIA_FRAGMENT}
+          ${MEDIA_DETAIL_FIELDS}
         }
       }
       `,

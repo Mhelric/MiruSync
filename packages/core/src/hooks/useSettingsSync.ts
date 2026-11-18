@@ -62,6 +62,28 @@ export function useSettingsSync(
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const applyTheme = () => {
+      const resolvedDark =
+        settings.theme === 'dark' ||
+        (settings.theme === 'system' && mediaQuery.matches);
+      const root = document.documentElement;
+      root.classList.toggle('dark', resolvedDark);
+      root.classList.toggle('light', !resolvedDark);
+    };
+
+    applyTheme();
+
+    if (settings.theme === 'system') {
+      mediaQuery.addEventListener('change', applyTheme);
+      return () => mediaQuery.removeEventListener('change', applyTheme);
+    }
+  }, [settings.theme]);
+
+  useEffect(() => {
     if (!session?.user.id) return;
 
     let cancelled = false;

@@ -8,6 +8,7 @@ interface SyncPatchBody {
   settings?: Record<string, unknown>;
   markNotificationReadId?: string;
   markAllNotificationsRead?: boolean;
+  pushSubscription?: unknown;
 }
 
 export default async function handler(req: Request, _context: Context) {
@@ -86,6 +87,21 @@ export default async function handler(req: Request, _context: Context) {
       );
       if (res && !res.ok) {
         return Response.json({ error: 'Failed to mark notifications read' }, { status: 500 });
+      }
+    }
+
+    if (body.pushSubscription) {
+      const res = await supabaseServiceFetch('push_subscriptions', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: userId,
+          platform: 'web',
+          token_or_subscription: body.pushSubscription,
+          updated_at: new Date().toISOString(),
+        }),
+      });
+      if (res && !res.ok) {
+        return Response.json({ error: 'Failed to save push subscription' }, { status: 500 });
       }
     }
 
