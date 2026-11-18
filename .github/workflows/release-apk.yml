@@ -14,8 +14,6 @@ on:
       - 'apps/mobile/**'
       - 'packages/core/**'
       - '.github/workflows/release-apk.yml'
-    tags:
-      - 'v*'
 
 permissions:
   contents: write
