@@ -50,15 +50,25 @@ export default async function handler(req: Request, _context: Context) {
     }
 
     if (body.settings && Object.keys(body.settings).length > 0) {
-      const res = await supabaseServiceFetch('user_settings?on_conflict=user_id', {
+      const payload = {
+        ...body.settings,
+        user_id: userId,
+        updated_at: new Date().toISOString(),
+      };
+      let res = await supabaseServiceFetch('user_settings?on_conflict=user_id', {
         method: 'POST',
         headers: { Prefer: 'resolution=merge-duplicates' },
-        body: JSON.stringify({
-          ...body.settings,
-          user_id: userId,
-          updated_at: new Date().toISOString(),
-        }),
+        body: JSON.stringify(payload),
       });
+      if (res && !res.ok) {
+        res = await supabaseServiceFetch(
+          `user_settings?user_id=eq.${encodeURIComponent(userId)}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+          }
+        );
+      }
       if (res && !res.ok) {
         return Response.json({ error: 'Failed to update settings' }, { status: 500 });
       }

@@ -212,76 +212,84 @@ export function TrackerPage({ type }: { type: MediaType }) {
           </div>
         </div>
 
-        {/* Collapsible Filter Panel */}
-        {filtersOpen && (
-          <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <select
-              value={formatFilter}
-              onChange={(e) => setFormatFilter(e.target.value)}
-              className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
-            >
-              <option value="">All Formats</option>
-              {availableFormats.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={genreFilter}
-              onChange={(e) => setGenreFilter(e.target.value)}
-              className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
-            >
-              <option value="">All Genres</option>
-              {availableGenres.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={yearFilter}
-              onChange={(e) => setYearFilter(e.target.value)}
-              className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
-            >
-              <option value="">All Years</option>
-              {availableYears.map((y) => (
-                <option key={y} value={String(y)}>
-                  {y}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortKey)}
-              className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
-            >
-              <option value="updated">Sort: Last Updated</option>
-              <option value="title">Sort: Title</option>
-              <option value="score">Sort: Score</option>
-              <option value="progress">Sort: Progress</option>
-              {type === 'ANIME' && <option value="airing">Sort: Airing Soon</option>}
-            </select>
-
-            {activeFilterCount > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFormatFilter('');
-                  setGenreFilter('');
-                  setYearFilter('');
-                  setSortBy('updated');
-                }}
-                className="col-span-2 sm:col-span-4 text-left text-[11px] text-sky-400 hover:underline cursor-pointer px-1"
+        {/* Smooth Expanding Filter Panel */}
+        <div
+          className={`grid transition-all duration-300 ease-out ${
+            filtersOpen
+              ? 'grid-rows-[1fr] opacity-100'
+              : 'grid-rows-[0fr] opacity-0 pointer-events-none -mt-3'
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <select
+                value={formatFilter}
+                onChange={(e) => setFormatFilter(e.target.value)}
+                className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
               >
-                Reset filters
-              </button>
-            )}
+                <option value="">All Formats</option>
+                {availableFormats.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={genreFilter}
+                onChange={(e) => setGenreFilter(e.target.value)}
+                className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
+              >
+                <option value="">All Genres</option>
+                {availableGenres.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={yearFilter}
+                onChange={(e) => setYearFilter(e.target.value)}
+                className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
+              >
+                <option value="">All Years</option>
+                {availableYears.map((y) => (
+                  <option key={y} value={String(y)}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortKey)}
+                className="rounded-lg border border-slate-800 bg-slate-950/70 px-2.5 py-1.5 text-xs text-slate-200"
+              >
+                <option value="updated">Sort: Last Updated</option>
+                <option value="title">Sort: Title</option>
+                <option value="score">Sort: Score</option>
+                <option value="progress">Sort: Progress</option>
+                {type === 'ANIME' && <option value="airing">Sort: Airing Soon</option>}
+              </select>
+
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormatFilter('');
+                    setGenreFilter('');
+                    setYearFilter('');
+                    setSortBy('updated');
+                  }}
+                  className="col-span-2 sm:col-span-4 text-left text-[11px] text-sky-400 hover:underline cursor-pointer px-1"
+                >
+                  Reset filters
+                </button>
+              )}
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Status Tabs */}
         <div className="flex flex-nowrap overflow-x-auto sm:flex-wrap gap-1.5 border-b border-slate-800/80 pb-3">

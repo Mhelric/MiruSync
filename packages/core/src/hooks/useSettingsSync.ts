@@ -114,6 +114,30 @@ export const DEFAULT_SETTINGS: UserSettings = {
   quiet_hours: null,
 };
 
+const SETTINGS_STORAGE_KEY = 'mirusync:user_settings';
+let loadedSettingsForUser = '';
+let lastLocalSettingsEditAt = 0;
+
+function loadCachedSettings(): UserSettings {
+  if (typeof window === 'undefined') return DEFAULT_SETTINGS;
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) return DEFAULT_SETTINGS;
+    return { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<UserSettings>) };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
+
+function saveCachedSettings(settings: UserSettings) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
 interface SettingsStore {
   settings: UserSettings;
   setSettings: (settings: UserSettings) => void;
@@ -121,10 +145,17 @@ interface SettingsStore {
 }
 
 export const useSettingsStore = create<SettingsStore>((set) => ({
-  settings: DEFAULT_SETTINGS,
-  setSettings: (settings) => set({ settings }),
+  settings: loadCachedSettings(),
+  setSettings: (settings) => {
+    saveCachedSettings(settings);
+    set({ settings });
+  },
   patchSettings: (partial) =>
-    set((state) => ({ settings: { ...state.settings, ...partial } })),
+    set((state) => {
+      const next = { ...state.settings, ...partial };
+      saveCachedSettings(next);
+      return { settings: next };
+    }),
 }));
 
 function buildSyncHeaders(supabaseJwt?: string): Record<string, string> {
@@ -176,11 +207,17 @@ export function useSettingsSync(
   }, [settings.accent_color]);
 
   useEffect(() => {
-    if (!session?.user.id) return;
+    const userId = session?.user.id;
+    if (!userId) {
+      loadedSettingsForUser = '';
+      return;
+    }
 
     let cancelled = false;
 
     async function load() {
+      if (loadedSettingsForUser === userId) return;
+      loadedSettingsForUser = userId!;
       try {
         const res = await fetch(`${apiBase}/api/user-sync`, {
           credentials: 'include',
@@ -189,7 +226,7 @@ export function useSettingsSync(
         if (!res.ok) return;
         const json = (await res.json()) as { settings?: Partial<UserSettings> | null };
         const data = json.settings;
-        if (!cancelled && data) {
+        if (!cancelled && data && Date.now() - lastLocalSettingsEditAt > 10_000) {
           setSettings({
             theme: data.theme ?? DEFAULT_SETTINGS.theme,
             accent_color: data.accent_color ?? DEFAULT_SETTINGS.accent_color,
@@ -229,6 +266,7 @@ export function useSettingsSync(
               filter: `user_id=eq.${session.user.id}`,
             },
             (payload) => {
+              if (Date.now() - lastLocalSettingsEditAt < 5_000) return;
               const row = payload.new as Partial<UserSettings> | undefined;
               if (row) {
                 patchSettings(row);
@@ -259,6 +297,7 @@ export function useSettingsSync(
 
   const updateSettings = useCallback(
     async (partial: Partial<UserSettings>) => {
+      lastLocalSettingsEditAt = Date.now();
       patchSettings(partial);
       if (!session?.user.id) return;
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, ChevronRight, Flame, Star, Tv } from 'lucide-react';
@@ -38,6 +38,7 @@ export function HomePage() {
   const deleteEntry = useDeleteEntry();
   const [editing, setEditing] = useState<ListEntry | null>(null);
   const [heroIdx, setHeroIdx] = useState(0);
+  const touchStartX = useRef<number | null>(null);
 
   const { data: seasonalData } = useQuery({
     queryKey: ['homeSeasonalBanners'],
@@ -96,11 +97,61 @@ export function HomePage() {
     });
   }
 
+  function handleHeroTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0]?.clientX ?? null;
+  }
+
+  function handleHeroTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null || heroSlides.length <= 1) return;
+    const endX = e.changedTouches[0]?.clientX ?? touchStartX.current;
+    const delta = endX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(delta) < 40) return;
+    if (delta < 0) {
+      setHeroIdx((prev) => (prev + 1) % heroSlides.length);
+    } else {
+      setHeroIdx((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+    }
+  }
+
   return (
     <DesktopLayout>
-      <div className="space-y-8">
-        {/* Rotating Seasonal Trending Hero Banner + Greeting */}
-        <section className="hero-banner relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800/80 bg-slate-900/70 sm:min-h-[240px] flex flex-col justify-between shadow-2xl">
+      <div className="space-y-6">
+        {/* Highlighted Greeting + Anime & Manga Counts on Top */}
+        <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 sm:p-5 flex flex-col gap-3">
+          <div>
+            <p className="text-[11px] font-mono uppercase tracking-wider text-sky-400">
+              Dashboard
+            </p>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 mt-0.5">
+              Welcome back, <span className="text-sky-400">{session?.user.name}</span>
+            </h1>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="inline-flex items-center gap-2 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3.5 py-2">
+              <Tv className="h-4 w-4 text-sky-400" />
+              <span className="text-base font-bold font-mono text-sky-400">
+                {animeList?.length ?? '—'}
+              </span>
+              <span className="text-xs text-slate-300">Anime</span>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2">
+              <BookOpen className="h-4 w-4 text-indigo-400" />
+              <span className="text-base font-bold font-mono text-indigo-400">
+                {mangaList?.length ?? '—'}
+              </span>
+              <span className="text-xs text-slate-300">Manga</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Swipable Rotating Seasonal Trending Hero Banner */}
+        <section
+          onTouchStart={handleHeroTouchStart}
+          onTouchEnd={handleHeroTouchEnd}
+          className="hero-banner relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800/80 bg-slate-900/70 sm:min-h-[220px] flex flex-col justify-between shadow-2xl touch-pan-y select-none"
+        >
           {/* Desktop full-bleed background */}
           {heroSlides.map((slide, idx) => (
             <img
@@ -108,7 +159,7 @@ export function HomePage() {
               src={slide.bannerUrl}
               alt=""
               aria-hidden="true"
-              className={`hidden sm:block absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
+              className={`hidden sm:block absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
                 idx === heroIdx ? 'opacity-45' : 'opacity-0'
               }`}
             />
@@ -117,74 +168,54 @@ export function HomePage() {
 
           {/* Mobile crisp top banner image */}
           {currentHero?.bannerUrl && (
-            <div className="sm:hidden relative h-36 w-full overflow-hidden">
+            <div className="sm:hidden relative h-32 w-full overflow-hidden">
               <img
                 src={currentHero.bannerUrl}
                 alt={formatMediaTitle(currentHero, titleLang)}
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
             </div>
           )}
 
-          <div className="relative z-10 p-4 sm:p-6 md:p-8 flex flex-col justify-between flex-1 gap-5">
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-              <div className="flex items-start gap-3.5 min-w-0">
-                {currentHero?.coverUrl && (
-                  <img
-                    src={currentHero.coverUrl}
-                    alt={formatMediaTitle(currentHero, titleLang)}
-                    className="sm:hidden h-24 w-16 rounded-lg object-cover border border-white/15 shrink-0 -mt-10 relative z-10 shadow-lg"
-                  />
-                )}
-                <div className="min-w-0">
-                  <p className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-sky-400">
-                    Welcome back, {session?.user.name}
-                  </p>
-                  {currentHero ? (
-                    <div className="mt-1.5 max-w-2xl space-y-1.5">
-                      <div className="flex items-center gap-2 text-xs font-mono text-amber-300">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/20 border border-sky-500/30 px-2 py-0.5 text-[11px] text-sky-300">
-                          <Flame className="h-3 w-3" />
-                          Trending Now
+          <div className="relative z-10 p-4 sm:p-6 md:p-8 flex flex-col justify-between flex-1 gap-4">
+            <div className="flex items-start gap-3.5 min-w-0">
+              {currentHero?.coverUrl && (
+                <img
+                  src={currentHero.coverUrl}
+                  alt={formatMediaTitle(currentHero, titleLang)}
+                  className="sm:hidden h-24 w-16 rounded-lg object-cover border border-white/15 shrink-0 mt-0.5 shadow-lg"
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                {currentHero ? (
+                  <div className="max-w-2xl space-y-1.5">
+                    <div className="flex items-center gap-2 text-xs font-mono text-amber-300">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/20 border border-sky-500/30 px-2 py-0.5 text-[11px] text-sky-300">
+                        <Flame className="h-3 w-3" />
+                        Trending Now
+                      </span>
+                      {currentHero.averageScore && (
+                        <span className="inline-flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-amber-300" />
+                          {currentHero.averageScore}%
                         </span>
-                        {currentHero.averageScore && (
-                          <span className="inline-flex items-center gap-1">
-                            <Star className="h-3 w-3 fill-amber-300" />
-                            {currentHero.averageScore}%
-                          </span>
-                        )}
-                      </div>
-                      <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-tight text-white line-clamp-2">
-                        {formatMediaTitle(currentHero, titleLang)}
-                      </h1>
-                      {currentHero.synopsis && (
-                        <p className="text-xs md:text-sm text-slate-300 line-clamp-2">
-                          {currentHero.synopsis.replace(/<[^>]+>/g, '')}
-                        </p>
                       )}
                     </div>
-                  ) : (
-                    <h1 className="mt-2 text-2xl font-bold tracking-tight text-white">
-                      Pick up right where you left off.
-                    </h1>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-2.5 self-start">
-                <div className="rounded-xl sm:rounded-2xl backdrop-blur-md border border-white/10 bg-slate-950/60 px-3.5 py-2 text-center">
-                  <div className="text-lg sm:text-xl font-bold font-mono text-sky-400">
-                    {animeList?.length ?? '—'}
+                    <h2 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-tight text-white line-clamp-2">
+                      {formatMediaTitle(currentHero, titleLang)}
+                    </h2>
+                    {currentHero.synopsis && (
+                      <p className="text-xs md:text-sm text-slate-300 line-clamp-2">
+                        {currentHero.synopsis.replace(/<[^>]+>/g, '')}
+                      </p>
+                    )}
                   </div>
-                  <div className="text-[11px] text-slate-300">Anime</div>
-                </div>
-                <div className="rounded-xl sm:rounded-2xl backdrop-blur-md border border-white/10 bg-slate-950/60 px-3.5 py-2 text-center">
-                  <div className="text-lg sm:text-xl font-bold font-mono text-indigo-400">
-                    {mangaList?.length ?? '—'}
-                  </div>
-                  <div className="text-[11px] text-slate-300">Manga</div>
-                </div>
+                ) : (
+                  <h2 className="text-xl font-bold tracking-tight text-white">
+                    Trending this season
+                  </h2>
+                )}
               </div>
             </div>
 

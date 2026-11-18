@@ -269,11 +269,18 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
                 <AniListIcon className="h-4 w-4 shrink-0 rounded-[4px]" />
               )}
             </NavLink>
+            <NavLink
+              to="/settings"
+              title="Settings"
+              className="md:hidden rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 p-1.5 text-slate-400 hover:text-sky-400 transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+            </NavLink>
             <button
               type="button"
               onClick={() => setConfirmLogout(true)}
               title="Sign out"
-              className="rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 p-1.5 text-slate-400 hover:text-rose-300 transition-colors cursor-pointer"
+              className="hidden md:inline-flex rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 p-1.5 text-slate-400 hover:text-rose-300 transition-colors cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -309,12 +316,24 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
+              <NavLink
+                to="/search"
+                className={({ isActive }) =>
+                  `col-span-2 flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-colors ${
+                    isActive
+                      ? 'border-sky-500/40 bg-sky-500/15 text-sky-400'
+                      : 'border-slate-800 bg-slate-950/60 text-slate-200 hover:border-slate-700'
+                  }`
+                }
+              >
+                <Search className="h-4 w-4 shrink-0" />
+                <span>Search Anime &amp; Manga</span>
+              </NavLink>
               {[
                 { to: '/popular', label: 'Popular', icon: Flame },
                 { to: '/calendar', label: 'Calendar', icon: Calendar },
                 { to: '/new-releases', label: 'New Releases', icon: Sparkles },
                 { to: '/news', label: 'News', icon: Newspaper },
-                { to: '/search', label: 'Search', icon: Search },
               ].map(({ to, label, icon: Icon }) => (
                 <NavLink
                   key={to}

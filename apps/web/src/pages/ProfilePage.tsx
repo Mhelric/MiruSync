@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BookOpen,
+  LogOut,
   Settings,
   Sparkles,
   Star,
@@ -598,10 +599,12 @@ function RecentActivitySection({
 
 export function ProfilePage() {
   const session = useAuthStore((s) => s.session);
+  const logoutWeb = useAuthStore((s) => s.logoutWeb);
   const titleLang = useSettingsStore((s) => s.settings.title_language);
   const { data: animeList } = useMediaList('ANIME');
   const { data: mangaList } = useMediaList('MANGA');
   const { data: profileDetails, isLoading: profileLoading } = useProfileDetails();
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   const stats = useMemo(() => {
     const anime = animeList ?? [];
@@ -739,10 +742,16 @@ export function ProfilePage() {
                       <AniListIcon className="h-6 w-6 rounded-md shrink-0" />
                     )}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmLogout(true)}
+                    title="Sign out"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 text-xs font-medium text-rose-300 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    Sign Out
+                  </button>
                 </div>
-                <p className="text-xs font-mono text-slate-400 mt-1">
-                  ID: {session?.user.id}
-                </p>
                 {profileDetails?.about && (
                   <p className="text-xs text-slate-300 mt-2 max-w-2xl line-clamp-2">
                     {profileDetails.about}
@@ -751,7 +760,7 @@ export function ProfilePage() {
               </div>
             </div>
 
-            {/* Live Activity Status + Year Recap */}
+            {/* Live Activity Status + Settings */}
             <div className="flex flex-wrap items-center gap-2.5">
               <div className="inline-flex items-center gap-2.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs text-emerald-300">
                 <span className="relative flex h-2 w-2 shrink-0">
@@ -765,14 +774,6 @@ export function ProfilePage() {
                   </span>
                 )}
               </div>
-
-              <Link
-                to="/recap"
-                className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 px-3.5 py-2 text-xs font-medium text-sky-300 transition-colors"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                {new Date().getFullYear()} Recap
-              </Link>
 
               <Link
                 to="/settings"
@@ -897,6 +898,53 @@ export function ProfilePage() {
           </section>
         </div>
       </div>
+
+      {confirmLogout && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4"
+          onClick={() => setConfirmLogout(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl backdrop-blur-xl bg-slate-900/90 border border-white/15 p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                <LogOut className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-100">
+                  Sign out of MiruSync?
+                </h2>
+                <p className="text-xs text-slate-400">
+                  You can sign back in anytime with{' '}
+                  {session?.provider === 'mal' ? 'MyAnimeList' : 'AniList'}.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmLogout(false)}
+                className="rounded-lg border border-slate-700 hover:bg-slate-800 px-4 py-2 text-xs font-medium text-slate-300 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmLogout(false);
+                  void logoutWeb();
+                }}
+                className="rounded-lg bg-rose-500 hover:bg-rose-400 px-4 py-2 text-xs font-semibold text-slate-950 cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DesktopLayout>
   );
 }

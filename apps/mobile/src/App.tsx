@@ -8,6 +8,7 @@ import {
   useAuthStore,
   useMediaList,
   useSettingsStore,
+  useSettingsSync,
 } from '@mirusync/core';
 import {
   API_BASE,
@@ -51,7 +52,11 @@ const queryClient = new QueryClient({
   },
 });
 
+const MOBILE_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const MOBILE_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
 function MobileBackgroundSync() {
+  useSettingsSync(MOBILE_SUPABASE_URL, MOBILE_SUPABASE_ANON_KEY, API_BASE);
   const { data: animeList } = useMediaList('ANIME', undefined, API_BASE);
   const notificationsEnabled = useSettingsStore(
     (s) => s.settings.notifications_enabled
