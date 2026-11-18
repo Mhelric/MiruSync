@@ -20,6 +20,7 @@ import {
   type ProfileFavoriteItem,
 } from '@mirusync/core';
 import { DesktopLayout } from '../layouts/DesktopLayout';
+import { AniListIcon, MalIcon } from '../components/BrandIcons';
 
 const STATUS_LABELS: { key: ListStatus; label: string; color: string }[] = [
   { key: 'CURRENT', label: 'Watching / Reading', color: 'bg-sky-500' },
@@ -727,8 +728,15 @@ export function ProfilePage() {
               <div>
                 <div className="flex flex-wrap items-center gap-2.5">
                   <h1 className="text-2xl font-bold">{session?.user.name}</h1>
-                  <span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-xs font-mono text-sky-400 uppercase">
-                    {session?.provider === 'mal' ? 'MyAnimeList' : 'AniList'}
+                  <span
+                    title={session?.provider === 'mal' ? 'MyAnimeList' : 'AniList'}
+                    className="inline-flex items-center"
+                  >
+                    {session?.provider === 'mal' ? (
+                      <MalIcon className="h-6 w-6 rounded-md shrink-0" />
+                    ) : (
+                      <AniListIcon className="h-6 w-6 rounded-md shrink-0" />
+                    )}
                   </span>
                 </div>
                 <p className="text-xs font-mono text-slate-400 mt-1">

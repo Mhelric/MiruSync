@@ -202,15 +202,10 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2.5 rounded-lg border border-slate-800 bg-slate-900/70 hover:border-slate-700 px-3 py-1.5 text-sm text-slate-400 w-64 sm:w-72 justify-between transition-colors cursor-pointer"
+              className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 hover:border-slate-700 px-3 py-1.5 text-sm text-slate-400 w-64 sm:w-72 justify-start transition-colors cursor-pointer"
             >
-              <span className="flex items-center gap-2">
-                <Search className="h-3.5 w-3.5" />
-                Search anime &amp; manga…
-              </span>
-              <kbd className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-mono text-slate-400">
-                Ctrl K
-              </kbd>
+              <Search className="h-3.5 w-3.5" />
+              <span>Search anime &amp; manga…</span>
             </button>
           </div>
 
