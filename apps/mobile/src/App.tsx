@@ -3,7 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App as CapApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-import { Button, Dialog, DialogButton } from 'konsta/react';
+import { Download, Sparkles, X } from 'lucide-react';
 import {
   useAuthStore,
   useMediaList,
@@ -22,7 +22,8 @@ import { MobileTrackerPage } from './pages/MobileTrackerPage';
 import { MobileDiscoverPage } from './pages/MobileDiscoverPage';
 import { MobileProfilePage } from './pages/MobileProfilePage';
 
-const APP_VERSION = '1.0.0';
+const FALLBACK_APP_VERSION =
+  (import.meta.env.VITE_APP_VERSION as string | undefined) || '1.1.0';
 
 interface AppVersionInfo {
   version: string;
@@ -32,8 +33,14 @@ interface AppVersionInfo {
 }
 
 function isNewerVersion(remote: string, local: string): boolean {
-  const r = remote.split('.').map(Number);
-  const l = local.split('.').map(Number);
+  const clean = (v: string) =>
+    v
+      .replace(/^v/i, '')
+      .split('-')[0]
+      .split('.')
+      .map((n) => parseInt(n, 10) || 0);
+  const r = clean(remote);
+  const l = clean(local);
   for (let i = 0; i < Math.max(r.length, l.length); i++) {
     const rv = r[i] ?? 0;
     const lv = l[i] ?? 0;
@@ -93,16 +100,38 @@ function MobileRoutes() {
       }
     });
 
-    fetch(`${API_BASE}/api/app-version`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: AppVersionInfo | null) => {
-        if (data?.version && isNewerVersion(data.version, APP_VERSION)) {
+    let cancelled = false;
+    (async () => {
+      let currentVersion = FALLBACK_APP_VERSION;
+      try {
+        const info = await CapApp.getInfo();
+        if (info?.version) {
+          currentVersion = info.version;
+        }
+      } catch {
+        // Running in web preview without native Capacitor runtime
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/app-version`, {
+          cache: 'no-store',
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as AppVersionInfo | null;
+        if (
+          !cancelled &&
+          data?.version &&
+          isNewerVersion(data.version, currentVersion)
+        ) {
           setUpdateInfo(data);
         }
-      })
-      .catch(() => undefined);
+      } catch {
+        // Offline or unreachable
+      }
+    })();
 
     return () => {
+      cancelled = true;
       void sub.then((handle) => handle.remove());
     };
   }, [setSession]);
@@ -143,37 +172,72 @@ function MobileRoutes() {
       </Routes>
 
       {updateInfo && !updateDismissed && (
-        <Dialog
-          opened={true}
-          onBackdropClick={() => setUpdateDismissed(true)}
-          title={`Update Available (v${updateInfo.version})`}
-          content={
-            <div className="space-y-2 text-xs text-slate-300">
-              <p>A newer version of MiruSync is ready to download:</p>
-              {updateInfo.notes && updateInfo.notes.length > 0 && (
-                <ul className="list-disc pl-4 space-y-1">
-                  {updateInfo.notes.map((n, i) => (
-                    <li key={i}>{n}</li>
-                  ))}
-                </ul>
-              )}
-              <div className="pt-2">
-                <Button
-                  rounded
-                  onClick={() => void Browser.open({ url: updateInfo.apkUrl })}
-                  className="bg-sky-500 text-slate-950 font-semibold"
-                >
-                  Download APK Update
-                </Button>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-5"
+          onClick={() => setUpdateDismissed(true)}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl border border-white/15 bg-slate-900/95 p-6 shadow-2xl space-y-4 text-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="h-9 w-9 rounded-xl bg-sky-500/15 border border-sky-400/30 flex items-center justify-center shrink-0">
+                  <Sparkles className="h-4 w-4 text-sky-400" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white">
+                    Update Available
+                  </h2>
+                  <p className="text-xs font-mono text-sky-400">
+                    v{updateInfo.version}
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setUpdateDismissed(true)}
+                className="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                aria-label="Close update prompt"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          }
-          buttons={
-            <DialogButton onClick={() => setUpdateDismissed(true)}>
-              Later
-            </DialogButton>
-          }
-        />
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              A newer MiruSync APK is ready. Install it directly over your current app without losing your session.
+            </p>
+
+            {updateInfo.notes && updateInfo.notes.length > 0 && (
+              <ul className="space-y-1.5 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-300">
+                {updateInfo.notes.map((n, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="text-sky-400 mt-0.5">•</span>
+                    <span>{n}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => void Browser.open({ url: updateInfo.apkUrl })}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-sky-500 hover:bg-sky-400 py-3 px-4 text-sm font-semibold text-slate-950 transition-colors cursor-pointer"
+              >
+                <Download className="h-4 w-4" />
+                Download &amp; Install Update
+              </button>
+              <button
+                type="button"
+                onClick={() => setUpdateDismissed(true)}
+                className="w-full rounded-xl border border-slate-800 bg-slate-950/60 hover:bg-slate-800 py-2.5 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

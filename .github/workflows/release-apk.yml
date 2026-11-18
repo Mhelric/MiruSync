@@ -4,10 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. v1.1.0)'
+        description: 'Release tag (e.g. v1.2.0)'
         required: true
-        default: 'v1.1.0'
+        default: 'v1.2.0'
   push:
+    branches:
+      - main
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/core/**'
+      - '.github/workflows/release-apk.yml'
     tags:
       - 'v*'
 
@@ -21,13 +27,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Compute release version
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            TAG="${{ inputs.tag }}"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            TAG="v1.2.${{ github.run_number }}"
+          fi
+          APP_VER="${TAG#v}"
+          VER_CODE=$((100 + ${{ github.run_number }}))
+          echo "RELEASE_TAG=${TAG}" >> "$GITHUB_ENV"
+          echo "APP_VERSION=${APP_VER}" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=${VER_CODE}" >> "$GITHUB_ENV"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 12
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: setup-node@v4
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -49,28 +70,39 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_APP_URL: https://mirusync.vercel.app
+          VITE_APP_VERSION: ${{ env.APP_VERSION }}
         run: pnpm --filter @mirusync/mobile build
 
       - name: Sync Capacitor Android
         run: pnpm --filter @mirusync/mobile cap:sync
 
-      - name: Build Android APK
+      - name: Decode Android signing keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > /tmp/mirusync-release.jks
+
+      - name: Build signed Release APK
         working-directory: apps/mobile/android
+        env:
+          MIRUSYNC_KEYSTORE_FILE: /tmp/mirusync-release.jks
+          MIRUSYNC_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          MIRUSYNC_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          MIRUSYNC_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASS }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease -PappVersionCode=${{ env.VERSION_CODE }} -PappVersionName=${{ env.APP_VERSION }}
 
       - name: Prepare MiruSync.apk artifact
-        run: cp apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk MiruSync.apk
+        run: cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk MiruSync.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
-          name: MiruSync ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: MiruSync ${{ env.RELEASE_TAG }}
           make_latest: true
           files: MiruSync.apk
           body: |
-            MiruSync Android APK release.
+            MiruSync Android APK ${{ env.RELEASE_TAG }} (build ${{ env.VERSION_CODE }}).
+            - Signed with persistent release key for seamless in-place updates
             - Capacitor Local Notifications & Airing Today Home-Screen Widget
             - Unified MyAnimeList & AniList tracker with offline queue
