@@ -1,3 +1,8 @@
+import { parseCookies } from './cookies';
+import { verifyJwt } from './jwt';
+
+export const SESSION_COOKIE = 'mirusync_session';
+
 export interface UpsertUserInput {
   id: string;
   provider: 'mal' | 'anilist';
@@ -5,6 +10,55 @@ export interface UpsertUserInput {
   username: string;
   avatar_url?: string;
   score_format: string;
+}
+
+export function resolveAuthenticatedUserId(req: Request): string | null {
+  const cookies = parseCookies(req.headers.get('cookie'));
+  const sessionSecret = process.env.SESSION_SECRET || 'dev-insecure-secret';
+  const cookieSession = cookies[SESSION_COOKIE]
+    ? verifyJwt<{ user?: { id?: string } }>(cookies[SESSION_COOKIE], sessionSecret)
+    : null;
+
+  if (cookieSession?.user?.id) {
+    return cookieSession.user.id;
+  }
+
+  const authHeader = req.headers.get('authorization');
+  const bearer = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+  if (!bearer) return null;
+
+  const jwtSecret = process.env.SUPABASE_JWT_SECRET;
+  if (jwtSecret) {
+    const payload = verifyJwt<{ sub?: string }>(bearer, jwtSecret);
+    if (payload?.sub) return payload.sub;
+  }
+
+  const sessionToken = verifyJwt<{ sub?: string; user?: { id?: string } }>(
+    bearer,
+    sessionSecret
+  );
+  return sessionToken?.sub ?? sessionToken?.user?.id ?? null;
+}
+
+export async function supabaseServiceFetch(
+  path: string,
+  init: RequestInit = {}
+): Promise<Response | null> {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) return null;
+
+  const headers = new Headers(init.headers);
+  headers.set('apikey', serviceKey);
+  headers.set('Authorization', `Bearer ${serviceKey}`);
+  if (!headers.has('Content-Type') && init.body) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  return fetch(`${supabaseUrl}/rest/v1/${path}`, {
+    ...init,
+    headers,
+  });
 }
 
 export async function upsertSupabaseUser(input: UpsertUserInput): Promise<void> {

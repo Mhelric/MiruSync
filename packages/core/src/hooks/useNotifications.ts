@@ -13,40 +13,56 @@ export interface AppNotification {
   created_at: string;
 }
 
-export function useNotifications(supabaseUrl = '', supabaseAnonKey = '') {
+function buildSyncHeaders(supabaseJwt?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (supabaseJwt) {
+    headers.Authorization = `Bearer ${supabaseJwt}`;
+  }
+  return headers;
+}
+
+export function useNotifications(
+  supabaseUrl = '',
+  supabaseAnonKey = '',
+  apiBase = ''
+) {
   const session = useAuthStore((s) => s.session);
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!session?.user.id || !session.supabaseJwt || !supabaseUrl || !supabaseAnonKey) {
-      return;
-    }
-
-    const client = getSupabaseClient(supabaseUrl, supabaseAnonKey, session.supabaseJwt);
-    if (!client) return;
+    if (!session?.user.id) return;
 
     let cancelled = false;
     setLoading(true);
 
     async function load() {
-      const { data } = await client!
-        .from('notifications')
-        .select('*')
-        .eq('user_id', session!.user.id)
-        .order('created_at', { ascending: false })
-        .limit(40);
-
-      if (!cancelled) {
-        setItems((data as AppNotification[]) ?? []);
-        setLoading(false);
+      try {
+        const res = await fetch(`${apiBase}/api/user-sync`, {
+          credentials: 'include',
+          headers: buildSyncHeaders(session?.supabaseJwt),
+        });
+        if (!res.ok) return;
+        const json = (await res.json()) as { notifications?: AppNotification[] };
+        if (!cancelled) {
+          setItems(json.notifications ?? []);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
 
     void load();
 
+    const client =
+      session.supabaseJwt && supabaseUrl && supabaseAnonKey
+        ? getSupabaseClient(supabaseUrl, supabaseAnonKey, session.supabaseJwt)
+        : null;
+
     const channel = client
-      .channel(`notifications:${session.user.id}`)
+      ?.channel(`notifications:${session.user.id}`)
       .on(
         'postgres_changes',
         {
@@ -71,34 +87,38 @@ export function useNotifications(supabaseUrl = '', supabaseAnonKey = '') {
 
     return () => {
       cancelled = true;
-      void client.removeChannel(channel);
+      if (client && channel) {
+        void client.removeChannel(channel);
+      }
     };
-  }, [session?.user.id, session?.supabaseJwt, supabaseUrl, supabaseAnonKey]);
+  }, [session?.user.id, session?.supabaseJwt, supabaseUrl, supabaseAnonKey, apiBase]);
 
   const markAsRead = useCallback(
     async (id: string) => {
       setItems((prev) =>
         prev.map((item) => (item.id === id ? { ...item, read: true } : item))
       );
-      if (!session?.supabaseJwt || !supabaseUrl || !supabaseAnonKey) return;
-      const client = getSupabaseClient(supabaseUrl, supabaseAnonKey, session.supabaseJwt);
-      await client?.from('notifications').update({ read: true }).eq('id', id);
+      if (!session?.user.id) return;
+      await fetch(`${apiBase}/api/user-sync`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: buildSyncHeaders(session.supabaseJwt),
+        body: JSON.stringify({ markNotificationReadId: id }),
+      });
     },
-    [session?.supabaseJwt, supabaseUrl, supabaseAnonKey]
+    [session?.user.id, session?.supabaseJwt, apiBase]
   );
 
   const markAllRead = useCallback(async () => {
     setItems((prev) => prev.map((item) => ({ ...item, read: true })));
-    if (!session?.user.id || !session.supabaseJwt || !supabaseUrl || !supabaseAnonKey) {
-      return;
-    }
-    const client = getSupabaseClient(supabaseUrl, supabaseAnonKey, session.supabaseJwt);
-    await client
-      ?.from('notifications')
-      .update({ read: true })
-      .eq('user_id', session.user.id)
-      .eq('read', false);
-  }, [session?.user.id, session?.supabaseJwt, supabaseUrl, supabaseAnonKey]);
+    if (!session?.user.id) return;
+    await fetch(`${apiBase}/api/user-sync`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: buildSyncHeaders(session.supabaseJwt),
+      body: JSON.stringify({ markAllNotificationsRead: true }),
+    });
+  }, [session?.user.id, session?.supabaseJwt, apiBase]);
 
   const unreadCount = items.filter((i) => !i.read).length;
 

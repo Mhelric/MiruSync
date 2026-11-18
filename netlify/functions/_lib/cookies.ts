@@ -31,8 +31,14 @@ export function buildCookie(
 }
 
 export function getAppOrigin(req: Request): string {
-  const envUrl = process.env.VITE_APP_URL || process.env.URL;
-  if (envUrl) return envUrl.replace(/\/$/, '');
-  const url = new URL(req.url);
-  return `${url.protocol}//${url.host}`;
+  try {
+    const url = new URL(req.url);
+    if (url.origin && url.origin !== 'null') {
+      return url.origin.replace(/\/$/, '');
+    }
+  } catch {
+    // Fall back to environment variables if req.url is not a full URL
+  }
+  const envUrl = process.env.URL || process.env.VITE_APP_URL;
+  return envUrl ? envUrl.replace(/\/$/, '') : 'http://localhost:8888';
 }

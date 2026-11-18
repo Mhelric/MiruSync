@@ -40,7 +40,21 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
     set((state) => ({ settings: { ...state.settings, ...partial } })),
 }));
 
-export function useSettingsSync(supabaseUrl = '', supabaseAnonKey = '') {
+function buildSyncHeaders(supabaseJwt?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (supabaseJwt) {
+    headers.Authorization = `Bearer ${supabaseJwt}`;
+  }
+  return headers;
+}
+
+export function useSettingsSync(
+  supabaseUrl = '',
+  supabaseAnonKey = '',
+  apiBase = ''
+) {
   const session = useAuthStore((s) => s.session);
   const settings = useSettingsStore((s) => s.settings);
   const setSettings = useSettingsStore((s) => s.setSettings);
@@ -48,41 +62,46 @@ export function useSettingsSync(supabaseUrl = '', supabaseAnonKey = '') {
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
-    if (!session?.user.id || !session.supabaseJwt || !supabaseUrl || !supabaseAnonKey) {
-      return;
-    }
-
-    const client = getSupabaseClient(supabaseUrl, supabaseAnonKey, session.supabaseJwt);
-    if (!client) return;
+    if (!session?.user.id) return;
 
     let cancelled = false;
 
     async function load() {
-      const { data } = await client!
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', session!.user.id)
-        .single();
-
-      if (!cancelled && data) {
-        setSettings({
-          theme: data.theme ?? DEFAULT_SETTINGS.theme,
-          accent_color: data.accent_color ?? DEFAULT_SETTINGS.accent_color,
-          title_language: data.title_language ?? DEFAULT_SETTINGS.title_language,
-          list_layout: data.list_layout ?? DEFAULT_SETTINGS.list_layout,
-          compact_mode: Boolean(data.compact_mode),
-          show_adult: Boolean(data.show_adult),
-          spoiler_blur: data.spoiler_blur ?? true,
-          notifications_enabled: data.notifications_enabled ?? true,
-          quiet_hours: data.quiet_hours ?? null,
+      try {
+        const res = await fetch(`${apiBase}/api/user-sync`, {
+          credentials: 'include',
+          headers: buildSyncHeaders(session?.supabaseJwt),
         });
+        if (!res.ok) return;
+        const json = (await res.json()) as { settings?: Partial<UserSettings> | null };
+        const data = json.settings;
+        if (!cancelled && data) {
+          setSettings({
+            theme: data.theme ?? DEFAULT_SETTINGS.theme,
+            accent_color: data.accent_color ?? DEFAULT_SETTINGS.accent_color,
+            title_language: data.title_language ?? DEFAULT_SETTINGS.title_language,
+            list_layout: data.list_layout ?? DEFAULT_SETTINGS.list_layout,
+            compact_mode: Boolean(data.compact_mode),
+            show_adult: Boolean(data.show_adult),
+            spoiler_blur: data.spoiler_blur ?? true,
+            notifications_enabled: data.notifications_enabled ?? true,
+            quiet_hours: data.quiet_hours ?? null,
+          });
+        }
+      } catch {
+        // Keep local defaults if offline
       }
     }
 
     void load();
 
+    const client =
+      session.supabaseJwt && supabaseUrl && supabaseAnonKey
+        ? getSupabaseClient(supabaseUrl, supabaseAnonKey, session.supabaseJwt)
+        : null;
+
     const channel = client
-      .channel(`settings:${session.user.id}`)
+      ?.channel(`settings:${session.user.id}`)
       .on(
         'postgres_changes',
         {
@@ -102,33 +121,38 @@ export function useSettingsSync(supabaseUrl = '', supabaseAnonKey = '') {
 
     return () => {
       cancelled = true;
-      void client.removeChannel(channel);
+      if (client && channel) {
+        void client.removeChannel(channel);
+      }
     };
-  }, [session?.user.id, session?.supabaseJwt, supabaseUrl, supabaseAnonKey, setSettings, patchSettings]);
+  }, [
+    session?.user.id,
+    session?.supabaseJwt,
+    supabaseUrl,
+    supabaseAnonKey,
+    apiBase,
+    setSettings,
+    patchSettings,
+  ]);
 
   const updateSettings = useCallback(
     async (partial: Partial<UserSettings>) => {
       patchSettings(partial);
-      if (!session?.user.id || !session.supabaseJwt || !supabaseUrl || !supabaseAnonKey) {
-        return;
-      }
-      const client = getSupabaseClient(supabaseUrl, supabaseAnonKey, session.supabaseJwt);
-      if (!client) return;
+      if (!session?.user.id) return;
 
       setSyncing(true);
       try {
-        await client
-          .from('user_settings')
-          .update({
-            ...partial,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', session.user.id);
+        await fetch(`${apiBase}/api/user-sync`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: buildSyncHeaders(session.supabaseJwt),
+          body: JSON.stringify({ settings: partial }),
+        });
       } finally {
         setSyncing(false);
       }
     },
-    [session?.user.id, session?.supabaseJwt, supabaseUrl, supabaseAnonKey, patchSettings]
+    [session?.user.id, session?.supabaseJwt, apiBase, patchSettings]
   );
 
   return { settings, updateSettings, syncing };

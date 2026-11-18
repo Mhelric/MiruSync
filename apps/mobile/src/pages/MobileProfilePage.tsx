@@ -19,7 +19,8 @@ export function MobileProfilePage() {
   const { data: mangaList } = useMediaList('MANGA', undefined, API_BASE);
   const { settings, updateSettings } = useSettingsSync(
     SUPABASE_URL,
-    SUPABASE_ANON_KEY
+    SUPABASE_ANON_KEY,
+    API_BASE
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
 
