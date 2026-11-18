@@ -1,16 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Activity,
   BookOpen,
-  CalendarDays,
-  Clock,
-  Flame,
-  Heart,
   Sparkles,
   Star,
   Tv,
-  Users,
 } from 'lucide-react';
 import {
   formatMediaTitle,
@@ -145,7 +139,6 @@ function buildHeatmapData(
   const monthLabels: (string | null)[] = [];
   const flatValidDays: HeatmapCell[] = [];
 
-  let lastLabeledMonth = -1;
   let totalUpdates = 0;
   let activeDays = 0;
 
@@ -189,10 +182,13 @@ function buildHeatmapData(
 
     const firstCellDt = new Date(startUtcMs + w * 7 * dayMs);
     const colMonth = firstCellDt.getUTCMonth();
-    const colDay = firstCellDt.getUTCDate();
-    if (colMonth !== lastLabeledMonth && (w > 0 || colDay <= 14)) {
+    const laterCellDt = new Date(
+      startUtcMs + Math.min(totalWeeks - 1, w + 3) * 7 * dayMs
+    );
+    const prevWeekMonth =
+      w > 0 ? new Date(startUtcMs + (w - 1) * 7 * dayMs).getUTCMonth() : -1;
+    if (colMonth !== prevWeekMonth && laterCellDt.getUTCMonth() === colMonth) {
       monthLabels.push(SHORT_MONTHS[colMonth]);
-      lastLabeledMonth = colMonth;
     } else {
       monthLabels.push(null);
     }
@@ -291,80 +287,78 @@ function synthesizeRecentActivities(entries: ListEntry[]): ProfileActivityEvent[
     }));
 }
 
-function ActivityHeatmapSection({
-  grid,
-  totalTracked,
-}: {
-  grid: HeatmapGridData;
-  totalTracked: number;
-}) {
+function ActivityHeatmapSection({ grid }: { grid: HeatmapGridData }) {
   const [hovered, setHovered] = useState<HeatmapCell | null>(null);
 
   return (
-    <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-emerald-400" />
-            <h2 className="text-sm font-semibold text-slate-100">
-              Activity History
-            </h2>
-          </div>
-          <span className="text-xs font-mono text-slate-400">
-            {grid.totalUpdates} updates in the last year
+    <section className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-5 space-y-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="flex items-baseline gap-2.5">
+          <h2 className="text-sm font-semibold text-slate-100">Activity History</h2>
+          <span className="text-xs text-slate-400">
+            {grid.totalUpdates} {grid.totalUpdates === 1 ? 'update' : 'updates'} in the last year
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/70 px-2.5 py-1 text-slate-300">
-            <Activity className="h-3 w-3 text-emerald-400" />
-            <span className="font-mono font-semibold">{grid.activeDays}</span> active days
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/70 px-2.5 py-1 text-slate-300">
-            <Flame className="h-3 w-3 text-amber-400" />
-            <span className="font-mono font-semibold">{grid.currentStreak}d</span> streak
-            {grid.bestStreak > grid.currentStreak && (
-              <span className="text-slate-500 font-mono">
-                (best {grid.bestStreak}d)
-              </span>
-            )}
-          </span>
+        <div className="flex items-center gap-3 text-xs text-slate-400">
+          {hovered ? (
+            <span className="text-slate-200 font-medium">
+              {hovered.amount} {hovered.amount === 1 ? 'update' : 'updates'} on{' '}
+              {hovered.label}
+            </span>
+          ) : (
+            <span>
+              {grid.activeDays} active {grid.activeDays === 1 ? 'day' : 'days'}
+              {grid.currentStreak > 0
+                ? ` · ${grid.currentStreak}d current streak`
+                : grid.bestStreak > 0
+                  ? ` · best ${grid.bestStreak}d`
+                  : ''}
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-800/80 bg-slate-950/70 p-4 overflow-x-auto">
-        <div className="inline-block min-w-max">
-          {/* Month header row */}
-          <div className="flex items-center mb-1.5 pl-8 gap-[3px]">
-            {grid.monthLabels.map((label, i) => (
-              <div
-                key={i}
-                className="w-3 text-[10px] font-mono text-slate-400 leading-none overflow-visible whitespace-nowrap"
-              >
-                {label ?? ''}
-              </div>
-            ))}
+      <div className="overflow-x-auto pt-1">
+        <div className="min-w-[680px] space-y-1.5">
+          {/* Month labels aligned to the 53 week columns */}
+          <div className="flex items-center gap-2">
+            <div className="w-7 shrink-0" />
+            <div
+              className="flex-1 grid gap-[3px]"
+              style={{ gridTemplateColumns: 'repeat(53, minmax(0, 1fr))' }}
+            >
+              {grid.monthLabels.map((label, i) => (
+                <div
+                  key={i}
+                  className="text-[11px] text-slate-400 leading-none overflow-visible whitespace-nowrap"
+                >
+                  {label ?? ''}
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Weekday labels + 53x7 cells */}
-          <div className="flex items-start gap-2">
-            <div className="grid grid-rows-7 gap-[3px] w-6 shrink-0">
+          {/* Weekday labels + 53 week columns */}
+          <div className="flex items-stretch gap-2">
+            <div className="w-7 shrink-0 grid grid-rows-7 gap-[3px] text-[10px] text-slate-400">
               {WEEKDAY_ROWS.map((day, idx) => (
-                <div
-                  key={idx}
-                  className="h-3 text-[10px] font-mono text-slate-400 leading-3 flex items-center"
-                >
+                <div key={idx} className="flex items-center leading-none">
                   {day}
                 </div>
               ))}
             </div>
 
-            <div className="flex gap-[3px]" onMouseLeave={() => setHovered(null)}>
+            <div
+              className="flex-1 grid gap-[3px]"
+              style={{ gridTemplateColumns: 'repeat(53, minmax(0, 1fr))' }}
+              onMouseLeave={() => setHovered(null)}
+            >
               {grid.weeks.map((week, wIdx) => (
                 <div key={wIdx} className="grid grid-rows-7 gap-[3px]">
                   {week.map((cell, dIdx) =>
                     cell.isFuture ? (
-                      <div key={dIdx} className="h-3 w-3" aria-hidden="true" />
+                      <div key={dIdx} className="w-full aspect-square" aria-hidden="true" />
                     ) : (
                       <button
                         key={cell.date}
@@ -373,7 +367,7 @@ function ActivityHeatmapSection({
                         onFocus={() => setHovered(cell)}
                         title={`${cell.amount} ${cell.amount === 1 ? 'update' : 'updates'} on ${cell.label}`}
                         aria-label={`${cell.amount} updates on ${cell.label}`}
-                        className={`h-3 w-3 rounded-[3px] transition-transform hover:scale-125 hover:ring-1 hover:ring-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-400 gh-cell-${cell.level}`}
+                        className={`w-full aspect-square rounded-[2px] transition-opacity hover:ring-1 hover:ring-slate-300 focus:outline-none gh-cell-${cell.level}`}
                       />
                     )
                   )}
@@ -384,30 +378,16 @@ function ActivityHeatmapSection({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-        <div>
-          {hovered ? (
-            <span className="font-mono text-slate-200">
-              {hovered.amount} {hovered.amount === 1 ? 'update' : 'updates'} on{' '}
-              {hovered.label}
-            </span>
-          ) : (
-            <span>
-              {totalTracked} titles tracked · Hover a square to inspect daily updates
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span>Less</span>
-          {[0, 1, 2, 3, 4].map((lvl) => (
-            <span
-              key={lvl}
-              className={`h-2.5 w-2.5 rounded-[2px] gh-cell-${lvl}`}
-              aria-hidden="true"
-            />
-          ))}
-          <span>More</span>
-        </div>
+      <div className="flex items-center justify-end gap-1.5 text-[11px] text-slate-400 pt-0.5">
+        <span>Less</span>
+        {[0, 1, 2, 3, 4].map((lvl) => (
+          <span
+            key={lvl}
+            className={`h-2.5 w-2.5 rounded-[2px] gh-cell-${lvl}`}
+            aria-hidden="true"
+          />
+        ))}
+        <span>More</span>
       </div>
     </section>
   );
@@ -442,10 +422,9 @@ function FavoritesSection({
     (tab === 'ANIME' && animeFallback) || (tab === 'MANGA' && mangaFallback);
 
   return (
-    <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-4">
+    <section className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-5 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Heart className="h-4 w-4 text-rose-400" />
           <h2 className="text-sm font-semibold text-slate-100">Favorites</h2>
           {showingFallback && activeItems.length > 0 && (
             <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-300">
@@ -466,7 +445,6 @@ function FavoritesSection({
                   : 'text-slate-400 hover:text-slate-200 border border-transparent'
               }`}
             >
-              {t.key === 'CHARACTER' && <Users className="h-3 w-3" />}
               {t.label}
               <span className="font-mono text-[10px] opacity-80">{t.count}</span>
             </button>
@@ -554,12 +532,9 @@ function RecentActivitySection({
   titleLang: 'romaji' | 'english' | 'native';
 }) {
   return (
-    <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-4">
+    <section className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-5 space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-sky-400" />
-          <h2 className="text-sm font-semibold text-slate-100">Recent Activity</h2>
-        </div>
+        <h2 className="text-sm font-semibold text-slate-100">Recent Activity</h2>
         <span className="text-xs font-mono text-slate-400">
           {activities.length} recent
         </span>
@@ -823,10 +798,7 @@ export function ProfilePage() {
         </section>
 
         {/* GitHub-Style Activity History Track Bar */}
-        <ActivityHeatmapSection
-          grid={heatmapGrid}
-          totalTracked={stats.totalEntries}
-        />
+        <ActivityHeatmapSection grid={heatmapGrid} />
 
         {/* User Favorites */}
         <FavoritesSection
