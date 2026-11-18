@@ -1,44 +1,103 @@
-import { Block, Button, Page } from 'konsta/react';
-import { Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
 import { startMobileOAuth } from '../lib/mobileAuth';
 
+const SCENES = [
+  { title: 'Frieren', image: '/scenes/frieren.gif' },
+  { title: 'One Piece', image: '/scenes/one-piece.gif' },
+  { title: 'Vinland Saga', image: '/scenes/vinland-saga.gif' },
+  { title: 'Naruto', image: '/scenes/naruto.gif' },
+  { title: 'Attack on Titan', image: '/scenes/aot.gif' },
+  { title: 'Jujutsu Kaisen', image: '/scenes/jjk.gif' },
+  { title: 'Demon Slayer', image: '/scenes/demon-slayer.gif' },
+  { title: 'Chainsaw Man', image: '/scenes/chainsaw-man.gif' },
+  { title: 'Fullmetal Alchemist', image: '/scenes/fmab.gif' },
+];
+
 export function MobileWelcomePage() {
+  const [sceneIdx, setSceneIdx] = useState(0);
+  const [connecting, setConnecting] = useState<'mal' | 'anilist' | null>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSceneIdx((prev) => (prev + 1) % SCENES.length);
+    }, 8000);
+    return () => clearInterval(timer);
+  }, []);
+
+  function handleLogin(provider: 'mal' | 'anilist') {
+    setConnecting(provider);
+    void startMobileOAuth(provider).catch(() => setConnecting(null));
+  }
+
   return (
-    <Page className="bg-slate-950 text-slate-50 flex flex-col justify-center">
-      <Block className="space-y-6 my-auto px-6">
+    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-50 flex items-center justify-center p-4">
+      {/* Blurred Animated Anime Scenes Background */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        {SCENES.map((scene, idx) => (
+          <img
+            key={scene.title}
+            src={scene.image}
+            alt=""
+            className={`absolute inset-0 h-full w-full object-cover blur-sm scale-105 transition-opacity duration-1000 ${
+              idx === sceneIdx ? 'opacity-45 animate-ken-burns' : 'opacity-0'
+            }`}
+          />
+        ))}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/65 to-slate-950/75" />
+      </div>
+
+      {/* Glassmorphism Sign-In Card */}
+      <div className="relative z-10 w-full max-w-sm rounded-3xl backdrop-blur-2xl bg-slate-900/45 border border-white/15 p-7 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.8)] space-y-6">
+        <div className="flex items-center gap-3">
+          <MiruSyncLogo className="h-11 w-11 shrink-0 drop-shadow-lg" />
+          <span className="text-xl font-bold tracking-tight text-white">
+            Miru<span className="text-sky-400">Sync</span>
+          </span>
+        </div>
+
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-sky-400">
-            <Sparkles className="h-4 w-4" />
-            MiruSync
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Track anime &amp; manga anywhere.
+          <h1 className="text-2xl font-extrabold tracking-tight leading-tight text-white">
+            Track anime &amp; manga in one place.
           </h1>
-          <p className="text-sm text-slate-400">
-            Sign in with MyAnimeList or AniList. Synced live with your desktop.
+          <p className="text-sm text-slate-300/90 leading-relaxed">
+            Sign in with MyAnimeList or AniList. Same fast experience across Desktop and Android, synced live.
           </p>
         </div>
 
-        <div className="space-y-3">
-          <Button
-            large
-            rounded
-            onClick={() => void startMobileOAuth('mal')}
-            className="bg-sky-500 text-slate-950 font-semibold"
+        <div className="space-y-3 pt-1">
+          <button
+            type="button"
+            disabled={connecting !== null}
+            onClick={() => handleLogin('mal')}
+            className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#00a6fb] hover:bg-[#33b8fc] disabled:opacity-70 text-slate-950 font-semibold px-4 py-3 text-sm transition-all shadow-lg shadow-sky-500/20 cursor-pointer"
           >
+            <MalIcon className="h-5 w-5 rounded" />
             Continue with MyAnimeList
-          </Button>
-          <Button
-            large
-            rounded
-            outline
-            onClick={() => void startMobileOAuth('anilist')}
-            className="border-indigo-500/60 text-indigo-300"
+          </button>
+
+          <button
+            type="button"
+            disabled={connecting !== null}
+            onClick={() => handleLogin('anilist')}
+            className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 disabled:opacity-70 text-white font-semibold px-4 py-3 text-sm transition-all backdrop-blur-md cursor-pointer"
           >
+            <AniListIcon className="h-5 w-5 rounded" />
             Continue with AniList
-          </Button>
+          </button>
         </div>
-      </Block>
-    </Page>
+      </div>
+
+      {/* Smooth Connecting Overlay */}
+      {connecting && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-slate-950/85 backdrop-blur-xl">
+          <MiruSyncLogo className="h-14 w-14 animate-pulse" />
+          <div className="flex items-center gap-2.5 text-sm font-medium text-slate-200">
+            <span className="h-4 w-4 rounded-full border-2 border-sky-400 border-t-transparent animate-spin" />
+            Connecting to {connecting === 'mal' ? 'MyAnimeList' : 'AniList'}…
+          </div>
+        </div>
+      )}
+    </main>
   );
 }

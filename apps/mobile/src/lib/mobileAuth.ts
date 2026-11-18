@@ -5,7 +5,7 @@ const MOBILE_SESSION_KEY = 'mirusync_mobile_session';
 
 export const API_BASE =
   (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, '') ||
-  'https://mirusync.netlify.app';
+  'https://mirusync.vercel.app';
 
 export function loadMobileSession(): AuthSession | null {
   try {
