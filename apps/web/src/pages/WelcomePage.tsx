@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Download, RefreshCw, ShieldCheck } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Download } from 'lucide-react';
 import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
@@ -12,31 +12,31 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
 };
 
 interface SceneSlide {
-  id: number;
+  id: string;
   title: string;
-  imageUrl: string;
+  gifUrl: string;
 }
 
-const DEFAULT_SCENES: SceneSlide[] = [
+const SCENES: SceneSlide[] = [
   {
-    id: 154587,
+    id: 'frieren',
     title: "Frieren: Beyond Journey's End",
-    imageUrl: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/154587-ivXNJ23SM1xB.jpg',
+    gifUrl: '/scenes/frieren.gif',
   },
   {
-    id: 21,
+    id: 'onepiece',
     title: 'One Piece',
-    imageUrl: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/21-wf37VakJmZqs.jpg',
+    gifUrl: '/scenes/onepiece.gif',
   },
   {
-    id: 101348,
+    id: 'vinland',
     title: 'Vinland Saga',
-    imageUrl: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/101348-3j6t5p22m8A6.jpg',
+    gifUrl: '/scenes/vinland.gif',
   },
   {
-    id: 20,
+    id: 'naruto',
     title: 'Naruto',
-    imageUrl: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/20-HHxhPj5Oj53a.jpg',
+    gifUrl: '/scenes/naruto.gif',
   },
 ];
 
@@ -47,67 +47,15 @@ export function WelcomePage() {
   const [searchParams] = useSearchParams();
   const authError = searchParams.get('auth_error');
 
-  const [scenes, setScenes] = useState<SceneSlide[]>(DEFAULT_SCENES);
   const [activeIndex, setActiveIndex] = useState(0);
   const [connectingProvider, setConnectingProvider] = useState<'mal' | 'anilist' | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch('https://graphql.anilist.co', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `
-          query {
-            Page(page: 1, perPage: 4) {
-              media(id_in: [154587, 21, 101348, 20], type: ANIME) {
-                id
-                title { english romaji }
-                bannerImage
-                coverImage { extraLarge }
-              }
-            }
-          }
-        `,
-      }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        const list = json?.data?.Page?.media as
-          | Array<{
-              id: number;
-              title?: { english?: string; romaji?: string };
-              bannerImage?: string;
-              coverImage?: { extraLarge?: string };
-            }>
-          | undefined;
-        if (!cancelled && list?.length) {
-          const order = [154587, 21, 101348, 20];
-          const mapped = order
-            .map((id) => list.find((m) => m.id === id))
-            .filter(Boolean)
-            .map((m) => ({
-              id: m!.id,
-              title: m!.title?.english || m!.title?.romaji || 'Anime',
-              imageUrl: m!.bannerImage || m!.coverImage?.extraLarge || '',
-            }))
-            .filter((s) => s.imageUrl);
-          if (mapped.length > 0) setScenes(mapped);
-        }
-      })
-      .catch(() => undefined);
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
     const timer = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % scenes.length);
+      setActiveIndex((prev) => (prev + 1) % SCENES.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, [scenes.length]);
+  }, []);
 
   function handleOAuthConnect(provider: 'mal' | 'anilist') {
     setConnectingProvider(provider);
@@ -119,9 +67,9 @@ export function WelcomePage() {
 
   return (
     <main className="relative min-h-screen flex items-center justify-center bg-slate-950 text-slate-50 p-6 overflow-hidden">
-      {/* Animated 4-Anime Background Slideshow */}
+      {/* Animated 4-Anime Scene GIF Background Slideshow */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
-        {scenes.map((scene, idx) => (
+        {SCENES.map((scene, idx) => (
           <div
             key={scene.id}
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
@@ -129,11 +77,9 @@ export function WelcomePage() {
             }`}
           >
             <img
-              src={scene.imageUrl}
+              src={scene.gifUrl}
               alt={scene.title}
-              className={`h-full w-full object-cover blur-[3px] scale-105 ${
-                idx === activeIndex ? 'animate-ken-burns' : ''
-              }`}
+              className="h-full w-full object-cover blur-[3px] scale-105"
             />
           </div>
         ))}
@@ -142,7 +88,7 @@ export function WelcomePage() {
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(circle at center, rgba(2,6,23,0.48) 0%, rgba(2,6,23,0.88) 78%, rgba(2,6,23,0.96) 100%)',
+              'radial-gradient(circle at center, rgba(2,6,23,0.45) 0%, rgba(2,6,23,0.88) 78%, rgba(2,6,23,0.96) 100%)',
           }}
         />
       </div>
@@ -152,10 +98,10 @@ export function WelcomePage() {
         <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
         <span className="text-slate-400">Now showing:</span>
         <span className="font-medium text-slate-100">
-          {scenes[activeIndex]?.title}
+          {SCENES[activeIndex]?.title}
         </span>
         <div className="flex items-center gap-1.5 ml-1">
-          {scenes.map((s, idx) => (
+          {SCENES.map((s, idx) => (
             <button
               key={s.id}
               type="button"
@@ -174,14 +120,9 @@ export function WelcomePage() {
       {/* Glassmorphism Sign-In Card */}
       <div className="relative z-10 max-w-md w-full rounded-3xl backdrop-blur-2xl bg-slate-900/45 border border-white/15 p-8 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.8)] transition-all duration-500">
         <div className="flex items-center gap-3 mb-5">
-          <MiruSyncLogo className="h-11 w-11 shadow-lg shadow-sky-500/20" />
-          <div>
-            <div className="text-lg font-bold tracking-tight text-white">
-              Miru<span className="text-sky-400">Sync</span>
-            </div>
-            <div className="text-[11px] font-mono uppercase tracking-wider text-sky-300/80">
-              Unified Tracker
-            </div>
+          <MiruSyncLogo className="h-10 w-10 shadow-lg shadow-sky-500/20" />
+          <div className="text-xl font-bold tracking-tight text-white">
+            Miru<span className="text-sky-400">Sync</span>
           </div>
         </div>
 
@@ -229,31 +170,11 @@ export function WelcomePage() {
             Download Android APK
           </a>
         </div>
-
-        <div className="mt-6 pt-5 border-t border-white/10 grid grid-cols-2 gap-3 text-xs text-slate-300">
-          <div className="flex items-center gap-2">
-            <RefreshCw className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-            <span>Live device sync</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-3.5 w-3.5 text-sky-400 shrink-0" />
-            <span>Official OAuth2</span>
-          </div>
-        </div>
-
-        <div className="mt-4 text-center">
-          <Link
-            to="/privacy"
-            className="text-[11px] text-slate-400 hover:text-white underline transition-colors"
-          >
-            Privacy Policy
-          </Link>
-        </div>
       </div>
 
       {/* Smooth Logging-In Transition Overlay */}
       {connectingProvider && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-2xl bg-slate-950/85 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-2xl bg-slate-950/85">
           <div className="relative flex items-center justify-center">
             <div className="h-24 w-24 rounded-full border-2 border-sky-400/30 border-t-sky-400 animate-spin" />
             <MiruSyncLogo className="h-12 w-12 absolute" />
@@ -262,7 +183,7 @@ export function WelcomePage() {
             Connecting to {connectingProvider === 'mal' ? 'MyAnimeList' : 'AniList'}…
           </p>
           <p className="mt-1 text-xs text-slate-400">
-            Preparing your unified MiruSync workspace
+            Preparing your MiruSync workspace
           </p>
         </div>
       )}
