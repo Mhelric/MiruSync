@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { resolveApiBase } from '../apiBase';
 import { formatMediaTitle } from '../providers';
 
 export interface AiringScheduleItem {
@@ -30,10 +31,11 @@ export interface NewsItem {
 }
 
 export function useAiringSchedule(apiBase = '') {
+  const base = resolveApiBase(apiBase);
   return useQuery<{ items: AiringScheduleItem[]; generatedAt: number }>({
     queryKey: ['airingSchedule'],
     queryFn: async () => {
-      const res = await fetch(`${apiBase}/api/schedule`);
+      const res = await fetch(`${base}/api/schedule`);
       if (!res.ok) throw new Error(`Schedule fetch failed: ${res.status}`);
       return res.json();
     },
@@ -42,10 +44,11 @@ export function useAiringSchedule(apiBase = '') {
 }
 
 export function useAnimeNews(apiBase = '') {
+  const base = resolveApiBase(apiBase);
   return useQuery<{ items: NewsItem[]; generatedAt: number }>({
     queryKey: ['animeNews'],
     queryFn: async () => {
-      const res = await fetch(`${apiBase}/api/news`);
+      const res = await fetch(`${base}/api/news`);
       if (!res.ok) throw new Error(`News fetch failed: ${res.status}`);
       return res.json();
     },

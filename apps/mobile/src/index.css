@@ -1,2 +1,2 @@
-@import "tailwindcss";
-@source "../node_modules/konsta";
+@import "../../web/src/index.css";
+@source "../../web/src";

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { create } from 'zustand';
+import { resolveApiBase } from '../apiBase';
 import { useAuthStore } from '../auth/store';
 import type { ScoreFormat } from '../providers/types';
 import { getSupabaseClient } from '../supabase/client';
@@ -219,7 +220,7 @@ export function useSettingsSync(
       if (loadedSettingsForUser === userId) return;
       loadedSettingsForUser = userId!;
       try {
-        const res = await fetch(`${apiBase}/api/user-sync`, {
+        const res = await fetch(`${resolveApiBase(apiBase)}/api/user-sync`, {
           credentials: 'include',
           headers: buildSyncHeaders(session?.supabaseJwt),
         });
@@ -303,7 +304,7 @@ export function useSettingsSync(
 
       setSyncing(true);
       try {
-        await fetch(`${apiBase}/api/user-sync`, {
+        await fetch(`${resolveApiBase(apiBase)}/api/user-sync`, {
           method: 'PATCH',
           credentials: 'include',
           headers: buildSyncHeaders(session.supabaseJwt),

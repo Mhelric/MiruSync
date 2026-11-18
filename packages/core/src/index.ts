@@ -1,3 +1,4 @@
+export * from './apiBase';
 export * from './providers';
 export * from './auth/store';
 export * from './supabase/client';

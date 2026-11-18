@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { resolveApiBase } from '../apiBase';
 import type { AppUser, ProviderId } from '../providers/types';
 
 export interface AuthSession {
@@ -73,7 +74,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logoutWeb: async (apiBase = '') => {
     try {
-      await fetch(`${apiBase}/api/auth-session`, {
+      await fetch(`${resolveApiBase(apiBase)}/api/auth-session`, {
         method: 'DELETE',
         credentials: 'include',
       });

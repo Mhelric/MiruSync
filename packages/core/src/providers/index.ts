@@ -1,3 +1,4 @@
+import { resolveApiBase } from '../apiBase';
 import type { AuthSession } from '../auth/store';
 import { AniListProvider } from './anilist';
 import { MalProvider } from './mal';
@@ -9,7 +10,7 @@ export { MalProvider } from './mal';
 
 export function createProvider(session: AuthSession, apiBase = ''): MediaProvider {
   if (session.provider === 'mal') {
-    return new MalProvider(apiBase, session.providerAccessToken);
+    return new MalProvider(resolveApiBase(apiBase), session.providerAccessToken);
   }
   return new AniListProvider(session.providerAccessToken);
 }

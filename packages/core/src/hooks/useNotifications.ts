@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { resolveApiBase } from '../apiBase';
 import { useAuthStore } from '../auth/store';
 import { getSupabaseClient } from '../supabase/client';
 
@@ -29,6 +30,7 @@ export function useNotifications(
   apiBase = ''
 ) {
   const session = useAuthStore((s) => s.session);
+  const resolvedApiBase = resolveApiBase(apiBase);
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -40,7 +42,7 @@ export function useNotifications(
 
     async function load() {
       try {
-        const res = await fetch(`${apiBase}/api/user-sync`, {
+        const res = await fetch(`${resolvedApiBase}/api/user-sync`, {
           credentials: 'include',
           headers: buildSyncHeaders(session?.supabaseJwt),
         });
@@ -107,7 +109,7 @@ export function useNotifications(
         prev.map((item) => (item.id === id ? { ...item, read: true } : item))
       );
       if (!session?.user.id) return;
-      await fetch(`${apiBase}/api/user-sync`, {
+      await fetch(`${resolvedApiBase}/api/user-sync`, {
         method: 'PATCH',
         credentials: 'include',
         headers: buildSyncHeaders(session.supabaseJwt),
@@ -170,7 +172,7 @@ export async function registerWebPush(
     applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
   });
 
-  const syncRes = await fetch('/api/user-sync', {
+  const syncRes = await fetch(`${resolveApiBase()}/api/user-sync`, {
     method: 'PATCH',
     credentials: 'include',
     headers: buildSyncHeaders(supabaseJwt),

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Bell, Download, Info, Shield, Trash2, Upload } from 'lucide-react';
 import {
   db,
+  getDefaultApiBase,
   registerWebPush,
   useAuthStore,
   useLocalPrefsStore,
@@ -265,7 +266,7 @@ export function SettingsPage() {
   }
 
   async function handleDeleteAccount() {
-    const res = await fetch('/api/account-delete', {
+    const res = await fetch(`${getDefaultApiBase()}/api/account-delete`, {
       method: 'DELETE',
       credentials: 'include',
     });
