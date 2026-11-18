@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Browser } from '@capacitor/browser';
 import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
 import { startMobileOAuth } from '../lib/mobileAuth';
 
@@ -24,6 +25,21 @@ export function MobileWelcomePage() {
     }, 8000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const sub = Browser.addListener('browserFinished', () => {
+      setConnecting(null);
+    });
+    return () => {
+      void sub.then((h) => h.remove());
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!connecting) return;
+    const timer = setTimeout(() => setConnecting(null), 12000);
+    return () => clearTimeout(timer);
+  }, [connecting]);
 
   function handleLogin(provider: 'mal' | 'anilist') {
     setConnecting(provider);
@@ -90,12 +106,19 @@ export function MobileWelcomePage() {
 
       {/* Smooth Connecting Overlay */}
       {connecting && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-slate-950/85 backdrop-blur-xl">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-slate-950/85 backdrop-blur-xl p-6">
           <MiruSyncLogo className="h-14 w-14 animate-pulse" />
           <div className="flex items-center gap-2.5 text-sm font-medium text-slate-200">
             <span className="h-4 w-4 rounded-full border-2 border-sky-400 border-t-transparent animate-spin" />
             Connecting to {connecting === 'mal' ? 'MyAnimeList' : 'AniList'}…
           </div>
+          <button
+            type="button"
+            onClick={() => setConnecting(null)}
+            className="mt-2 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 px-4 py-2 text-xs font-medium text-slate-200 cursor-pointer"
+          >
+            Cancel
+          </button>
         </div>
       )}
     </main>

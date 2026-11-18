@@ -26,9 +26,15 @@ export function saveMobileSession(session: AuthSession | null): void {
 
 export async function startMobileOAuth(provider: 'mal' | 'anilist'): Promise<void> {
   const path = provider === 'mal' ? 'auth-mal-start' : 'auth-al-start';
-  await Browser.open({
-    url: `${API_BASE}/api/${path}?platform=mobile`,
-  });
+  const url = `${API_BASE}/api/${path}?platform=mobile`;
+  try {
+    await Browser.open({ url });
+  } catch {
+    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!opened) {
+      window.location.href = url;
+    }
+  }
 }
 
 export async function exchangeMobileCallbackUrl(urlStr: string): Promise<AuthSession | null> {
