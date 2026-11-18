@@ -4,13 +4,13 @@ import { startMobileOAuth } from '../lib/mobileAuth';
 
 const SCENES = [
   { title: 'Frieren', image: '/scenes/frieren.gif' },
-  { title: 'One Piece', image: '/scenes/one-piece.gif' },
-  { title: 'Vinland Saga', image: '/scenes/vinland-saga.gif' },
+  { title: 'One Piece', image: '/scenes/onepiece.gif' },
+  { title: 'Vinland Saga', image: '/scenes/vinland.gif' },
   { title: 'Naruto', image: '/scenes/naruto.gif' },
   { title: 'Attack on Titan', image: '/scenes/aot.gif' },
   { title: 'Jujutsu Kaisen', image: '/scenes/jjk.gif' },
-  { title: 'Demon Slayer', image: '/scenes/demon-slayer.gif' },
-  { title: 'Chainsaw Man', image: '/scenes/chainsaw-man.gif' },
+  { title: 'Demon Slayer', image: '/scenes/demonslayer.gif' },
+  { title: 'Solo Leveling', image: '/scenes/sololeveling.gif' },
   { title: 'Fullmetal Alchemist', image: '/scenes/fmab.gif' },
 ];
 
