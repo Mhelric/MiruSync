@@ -4,12 +4,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App as CapApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Button, Dialog, DialogButton } from 'konsta/react';
-import { useAuthStore } from '@mirusync/core';
+import {
+  useAuthStore,
+  useMediaList,
+  useSettingsStore,
+} from '@mirusync/core';
 import {
   API_BASE,
   exchangeMobileCallbackUrl,
   loadMobileSession,
 } from './lib/mobileAuth';
+import { syncAiringNotificationsAndWidget } from './lib/mobileSyncWidgets';
 import { MobileWelcomePage } from './pages/MobileWelcomePage';
 import { MobileHomePage } from './pages/MobileHomePage';
 import { MobileTrackerPage } from './pages/MobileTrackerPage';
@@ -46,6 +51,27 @@ const queryClient = new QueryClient({
   },
 });
 
+function MobileBackgroundSync() {
+  const { data: animeList } = useMediaList('ANIME', undefined, API_BASE);
+  const notificationsEnabled = useSettingsStore(
+    (s) => s.settings.notifications_enabled
+  );
+  const quietHours = useSettingsStore((s) => s.settings.quiet_hours);
+  const titleLang = useSettingsStore((s) => s.settings.title_language);
+
+  useEffect(() => {
+    if (!animeList) return;
+    void syncAiringNotificationsAndWidget(
+      animeList,
+      notificationsEnabled,
+      quietHours,
+      titleLang
+    );
+  }, [animeList, notificationsEnabled, quietHours, titleLang]);
+
+  return null;
+}
+
 function MobileRoutes() {
   const session = useAuthStore((s) => s.session);
   const setSession = useAuthStore((s) => s.setSession);
@@ -78,6 +104,7 @@ function MobileRoutes() {
 
   return (
     <>
+      {session && <MobileBackgroundSync />}
       <Routes>
         <Route
           path="/"

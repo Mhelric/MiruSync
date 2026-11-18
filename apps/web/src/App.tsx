@@ -9,9 +9,11 @@ import { TrackerPage } from './pages/TrackerPage';
 import { MediaDetailPage } from './pages/MediaDetailPage';
 import { SearchPage } from './pages/SearchPage';
 import { PopularPage } from './pages/PopularPage';
+import { NewReleasesPage } from './pages/NewReleasesPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { NewsPage } from './pages/NewsPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { RecapPage } from './pages/RecapPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 
@@ -67,6 +69,10 @@ function AppRoutes() {
         element={session ? <PopularPage /> : <Navigate to="/" replace />}
       />
       <Route
+        path="/new-releases"
+        element={session ? <NewReleasesPage /> : <Navigate to="/" replace />}
+      />
+      <Route
         path="/calendar"
         element={session ? <CalendarPage /> : <Navigate to="/" replace />}
       />
@@ -77,6 +83,10 @@ function AppRoutes() {
       <Route
         path="/profile"
         element={session ? <ProfilePage /> : <Navigate to="/" replace />}
+      />
+      <Route
+        path="/recap"
+        element={session ? <RecapPage /> : <Navigate to="/" replace />}
       />
       <Route
         path="/settings"

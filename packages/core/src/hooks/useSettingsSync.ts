@@ -1,7 +1,104 @@
 import { useCallback, useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { useAuthStore } from '../auth/store';
+import type { ScoreFormat } from '../providers/types';
 import { getSupabaseClient } from '../supabase/client';
+
+export type AccentColor = 'sky' | 'indigo' | 'emerald' | 'rose' | 'amber';
+export type CheckFrequency = '15m' | '30m' | '1h' | '6h';
+export type ScoreFormatOverride = 'ACCOUNT' | ScoreFormat;
+
+const LOCAL_PREFS_KEY = 'mirusync:local_prefs';
+
+interface LocalPrefs {
+  scoreFormatOverride: ScoreFormatOverride;
+  checkFrequency: CheckFrequency;
+  recentSearches: string[];
+}
+
+function loadLocalPrefs(): LocalPrefs {
+  if (typeof window === 'undefined') {
+    return { scoreFormatOverride: 'ACCOUNT', checkFrequency: '1h', recentSearches: [] };
+  }
+  try {
+    const raw = window.localStorage.getItem(LOCAL_PREFS_KEY);
+    if (!raw) {
+      return { scoreFormatOverride: 'ACCOUNT', checkFrequency: '1h', recentSearches: [] };
+    }
+    const parsed = JSON.parse(raw) as Partial<LocalPrefs>;
+    return {
+      scoreFormatOverride: parsed.scoreFormatOverride ?? 'ACCOUNT',
+      checkFrequency: parsed.checkFrequency ?? '1h',
+      recentSearches: Array.isArray(parsed.recentSearches)
+        ? parsed.recentSearches.slice(0, 8)
+        : [],
+    };
+  } catch {
+    return { scoreFormatOverride: 'ACCOUNT', checkFrequency: '1h', recentSearches: [] };
+  }
+}
+
+function saveLocalPrefs(prefs: LocalPrefs) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(LOCAL_PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
+interface LocalPrefsStore extends LocalPrefs {
+  setScoreFormatOverride: (format: ScoreFormatOverride) => void;
+  setCheckFrequency: (freq: CheckFrequency) => void;
+  addRecentSearch: (query: string) => void;
+  clearRecentSearches: () => void;
+}
+
+export const useLocalPrefsStore = create<LocalPrefsStore>((set, get) => ({
+  ...loadLocalPrefs(),
+  setScoreFormatOverride: (scoreFormatOverride) => {
+    const next: LocalPrefs = {
+      scoreFormatOverride,
+      checkFrequency: get().checkFrequency,
+      recentSearches: get().recentSearches,
+    };
+    saveLocalPrefs(next);
+    set({ scoreFormatOverride });
+  },
+  setCheckFrequency: (checkFrequency) => {
+    const next: LocalPrefs = {
+      scoreFormatOverride: get().scoreFormatOverride,
+      checkFrequency,
+      recentSearches: get().recentSearches,
+    };
+    saveLocalPrefs(next);
+    set({ checkFrequency });
+  },
+  addRecentSearch: (query) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    const recentSearches = [
+      trimmed,
+      ...get().recentSearches.filter((q) => q.toLowerCase() !== trimmed.toLowerCase()),
+    ].slice(0, 8);
+    const next: LocalPrefs = {
+      scoreFormatOverride: get().scoreFormatOverride,
+      checkFrequency: get().checkFrequency,
+      recentSearches,
+    };
+    saveLocalPrefs(next);
+    set({ recentSearches });
+  },
+  clearRecentSearches: () => {
+    const next: LocalPrefs = {
+      scoreFormatOverride: get().scoreFormatOverride,
+      checkFrequency: get().checkFrequency,
+      recentSearches: [],
+    };
+    saveLocalPrefs(next);
+    set({ recentSearches: [] });
+  },
+}));
 
 export interface UserSettings {
   theme: 'light' | 'dark' | 'system';
@@ -82,6 +179,11 @@ export function useSettingsSync(
       return () => mediaQuery.removeEventListener('change', applyTheme);
     }
   }, [settings.theme]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.dataset.accent = settings.accent_color || 'sky';
+  }, [settings.accent_color]);
 
   useEffect(() => {
     if (!session?.user.id) return;

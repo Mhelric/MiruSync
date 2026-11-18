@@ -3,22 +3,25 @@ import { useSearchParams } from 'react-router-dom';
 import {
   useMediaList,
   usePopularMedia,
+  useSettingsStore,
   useUpdateEntry,
   type Media,
   type MediaType,
+  type PopularKind,
 } from '@mirusync/core';
 import { DesktopLayout } from '../layouts/DesktopLayout';
 import { DiscoverCard } from '../components/DiscoverCard';
 
-type PopularKind = 'trending' | 'season' | 'alltime';
-
 const TABS: { key: PopularKind; label: string }[] = [
   { key: 'trending', label: 'Trending Now' },
   { key: 'season', label: 'This Season' },
+  { key: 'upcoming', label: 'Upcoming Next Season' },
   { key: 'alltime', label: 'All-Time Popular' },
+  { key: 'toprated', label: 'Top Rated' },
 ];
 
 export function PopularPage() {
+  const showAdult = useSettingsStore((s) => s.settings.show_adult);
   const [searchParams] = useSearchParams();
   const initialType: MediaType =
     searchParams.get('type')?.toUpperCase() === 'MANGA' ? 'MANGA' : 'ANIME';
@@ -135,7 +138,7 @@ export function PopularPage() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {(data?.items ?? [])
-                .filter((m) => !m.isAdult)
+                .filter((m) => showAdult || !m.isAdult)
                 .map((media) => (
                   <DiscoverCard
                     key={media.id}

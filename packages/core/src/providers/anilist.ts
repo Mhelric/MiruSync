@@ -7,6 +7,7 @@ import type {
   MediaProvider,
   MediaType,
   Page,
+  PopularKind,
   ProfileActivityEvent,
   ProfileActivityPoint,
   ProfileFavoriteItem,
@@ -791,6 +792,8 @@ export class AniListProvider implements MediaProvider {
         $season: MediaSeason
         $format: MediaFormat
         $status: MediaStatus
+        $averageScore_greater: Int
+        $sort: [MediaSort]
         $isAdult: Boolean
         $page: Int
         $perPage: Int
@@ -805,8 +808,9 @@ export class AniListProvider implements MediaProvider {
             season: $season
             format: $format
             status: $status
+            averageScore_greater: $averageScore_greater
             isAdult: $isAdult
-            sort: [POPULARITY_DESC]
+            sort: $sort
           ) {
             ${MEDIA_FRAGMENT}
           }
@@ -821,6 +825,9 @@ export class AniListProvider implements MediaProvider {
         season: filters.season || undefined,
         format: filters.format || undefined,
         status: filters.status || undefined,
+        averageScore_greater:
+          filters.minScore && filters.minScore > 0 ? filters.minScore - 1 : undefined,
+        sort: [filters.sort ?? 'POPULARITY_DESC'],
         isAdult: filters.includeAdult ? undefined : false,
         page: filters.page ?? 1,
         perPage: filters.perPage ?? 24,
@@ -850,16 +857,45 @@ export class AniListProvider implements MediaProvider {
 
   async getPopular(
     type: MediaType,
-    kind: 'trending' | 'season' | 'alltime',
+    kind: PopularKind,
     page = 1
   ): Promise<Page<Media>> {
     const sort =
-      kind === 'trending' ? ['TRENDING_DESC'] : ['POPULARITY_DESC'];
+      kind === 'trending'
+        ? ['TRENDING_DESC']
+        : kind === 'toprated'
+          ? ['SCORE_DESC']
+          : ['POPULARITY_DESC'];
 
     const now = new Date();
     const month = now.getMonth() + 1;
     const currentSeason =
       month <= 3 ? 'WINTER' : month <= 6 ? 'SPRING' : month <= 9 ? 'SUMMER' : 'FALL';
+    const nextSeasonMap: Record<string, { season: string; yearOffset: number }> = {
+      WINTER: { season: 'SPRING', yearOffset: 0 },
+      SPRING: { season: 'SUMMER', yearOffset: 0 },
+      SUMMER: { season: 'FALL', yearOffset: 0 },
+      FALL: { season: 'WINTER', yearOffset: 1 },
+    };
+    const nextInfo = nextSeasonMap[currentSeason];
+
+    const season =
+      type !== 'ANIME'
+        ? undefined
+        : kind === 'season'
+          ? currentSeason
+          : kind === 'upcoming'
+            ? nextInfo.season
+            : undefined;
+    const seasonYear =
+      type !== 'ANIME'
+        ? undefined
+        : kind === 'season'
+          ? now.getFullYear()
+          : kind === 'upcoming'
+            ? now.getFullYear() + nextInfo.yearOffset
+            : undefined;
+    const status = kind === 'upcoming' ? 'NOT_YET_RELEASED' : undefined;
 
     const data = await this.gql<{
       Page: {
@@ -868,7 +904,7 @@ export class AniListProvider implements MediaProvider {
       };
     }>(
       `
-      query ($type: MediaType!, $sort: [MediaSort], $season: MediaSeason, $seasonYear: Int, $page: Int) {
+      query ($type: MediaType!, $sort: [MediaSort], $season: MediaSeason, $seasonYear: Int, $status: MediaStatus, $page: Int) {
         Page(page: $page, perPage: 24) {
           pageInfo { hasNextPage total }
           media(
@@ -876,6 +912,7 @@ export class AniListProvider implements MediaProvider {
             sort: $sort
             season: $season
             seasonYear: $seasonYear
+            status: $status
             isAdult: false
           ) {
             ${MEDIA_FRAGMENT}
@@ -886,8 +923,9 @@ export class AniListProvider implements MediaProvider {
       {
         type,
         sort,
-        season: kind === 'season' && type === 'ANIME' ? currentSeason : undefined,
-        seasonYear: kind === 'season' && type === 'ANIME' ? now.getFullYear() : undefined,
+        season,
+        seasonYear,
+        status,
         page,
       }
     );

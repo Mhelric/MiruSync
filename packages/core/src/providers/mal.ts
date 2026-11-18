@@ -8,6 +8,7 @@ import type {
   MediaProvider,
   MediaType,
   Page,
+  PopularKind,
   ProfileFavoriteItem,
   SearchFilters,
   UserProfileDetails,
@@ -401,8 +402,49 @@ export class MalProvider implements MediaProvider {
       paging?: { next?: string };
     }>(`/v2/${resource}?${params.toString()}`);
 
+    let items = data.data.map((d) => normalizeMalMedia(d.node, filters.type));
+    if (filters.genre) {
+      const targetGenre = filters.genre.toLowerCase();
+      items = items.filter((m) =>
+        m.genres.some((g) => g.toLowerCase() === targetGenre)
+      );
+    }
+    if (filters.year) {
+      items = items.filter((m) => m.seasonYear === filters.year);
+    }
+    if (filters.season) {
+      items = items.filter((m) => m.season === filters.season);
+    }
+    if (filters.format) {
+      items = items.filter((m) => m.format === filters.format);
+    }
+    if (filters.status) {
+      const normalized = filters.status.toUpperCase();
+      items = items.filter((m) => {
+        const s = m.status?.toUpperCase() ?? '';
+        if (normalized === 'RELEASING') {
+          return s === 'CURRENTLY_AIRING' || s === 'CURRENTLY_PUBLISHING' || s === 'RELEASING';
+        }
+        if (normalized === 'FINISHED') {
+          return s === 'FINISHED_AIRING' || s === 'FINISHED';
+        }
+        if (normalized === 'NOT_YET_RELEASED') {
+          return s === 'NOT_YET_AIRED' || s === 'NOT_YET_PUBLISHED' || s === 'NOT_YET_RELEASED';
+        }
+        return s === normalized;
+      });
+    }
+    if (filters.minScore && filters.minScore > 0) {
+      items = items.filter((m) => (m.averageScore ?? 0) >= filters.minScore!);
+    }
+    if (filters.sort === 'SCORE_DESC') {
+      items = [...items].sort((a, b) => (b.averageScore ?? 0) - (a.averageScore ?? 0));
+    } else if (filters.sort === 'START_DATE_DESC') {
+      items = [...items].sort((a, b) => (b.seasonYear ?? 0) - (a.seasonYear ?? 0));
+    }
+
     return {
-      items: data.data.map((d) => normalizeMalMedia(d.node, filters.type)),
+      items,
       hasNextPage: Boolean(data.paging?.next),
     };
   }
@@ -436,7 +478,7 @@ export class MalProvider implements MediaProvider {
 
   async getPopular(
     type: MediaType,
-    kind: 'trending' | 'season' | 'alltime',
+    kind: PopularKind,
     page = 1
   ): Promise<Page<Media>> {
     const resource = type === 'ANIME' ? 'anime' : 'manga';
@@ -444,7 +486,13 @@ export class MalProvider implements MediaProvider {
     const perPage = 24;
     const offset = (page - 1) * perPage;
     const rankingType =
-      kind === 'trending' && type === 'ANIME' ? 'airing' : 'bypopularity';
+      kind === 'toprated'
+        ? 'all'
+        : kind === 'upcoming' && type === 'ANIME'
+          ? 'upcoming'
+          : kind === 'trending' && type === 'ANIME'
+            ? 'airing'
+            : 'bypopularity';
 
     const data = await this.request<{
       data: { node: MalNodeRaw }[];

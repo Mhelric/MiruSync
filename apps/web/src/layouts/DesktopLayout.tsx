@@ -12,6 +12,7 @@ import {
   PanelLeftOpen,
   Search,
   Settings,
+  Sparkles,
   Tv,
   User,
   WifiOff,
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { to: '/search', label: 'Search', icon: Search },
   { to: '/popular', label: 'Popular', icon: Flame },
   { to: '/calendar', label: 'Calendar', icon: Calendar },
+  { to: '/new-releases', label: 'New Releases', icon: Sparkles },
   { to: '/news', label: 'News', icon: Newspaper },
 ];
 

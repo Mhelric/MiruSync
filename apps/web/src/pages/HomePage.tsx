@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, ChevronRight, Flame, Star, Tv } from 'lucide-react';
+import { BookOpen, ChevronRight, Flame, Shuffle, Star, Tv } from 'lucide-react';
 import {
   AniListProvider,
   formatMediaTitle,
@@ -18,6 +18,7 @@ import { DesktopLayout } from '../layouts/DesktopLayout';
 import { MediaCard } from '../components/MediaCard';
 import { DiscoverCard } from '../components/DiscoverCard';
 import { EditEntryModal } from '../components/EditEntryModal';
+import { RandomPickerModal } from '../components/RandomPickerModal';
 
 export function HomePage() {
   const session = useAuthStore((s) => s.session);
@@ -38,6 +39,7 @@ export function HomePage() {
   const deleteEntry = useDeleteEntry();
   const [editing, setEditing] = useState<ListEntry | null>(null);
   const [heroIdx, setHeroIdx] = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const { data: seasonalData } = useQuery({
     queryKey: ['homeSeasonalBanners'],
@@ -205,9 +207,19 @@ export function HomePage() {
               <Tv className="h-4 w-4 text-sky-400 animate-float-idle" />
               Continue Watching
             </h2>
-            <Link to="/anime" className="text-xs text-sky-400 hover:underline">
-              View all anime →
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20 px-2.5 py-1 text-xs font-medium text-sky-300 cursor-pointer"
+              >
+                <Shuffle className="h-3 w-3" />
+                What should I watch?
+              </button>
+              <Link to="/anime" className="text-xs text-sky-400 hover:underline">
+                View all anime →
+              </Link>
+            </div>
           </div>
 
           {animeLoading ? (
@@ -370,6 +382,13 @@ export function HomePage() {
           }
         />
       )}
+
+      <RandomPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        entries={[...(animeList ?? []), ...(mangaList ?? [])]}
+        defaultType="ALL"
+      />
     </DesktopLayout>
   );
 }

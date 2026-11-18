@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Download, Shield, Trash2 } from 'lucide-react';
+import { Bell, Download, Info, Shield, Trash2, Upload } from 'lucide-react';
 import {
   db,
   registerWebPush,
   useAuthStore,
+  useLocalPrefsStore,
   useMediaList,
+  useProvider,
   useSettingsSync,
+  type AccentColor,
+  type CheckFrequency,
+  type EntryUpdate,
+  type ListEntry,
+  type ListStatus,
+  type ProviderId,
+  type ScoreFormatOverride,
   type UserSettings,
 } from '@mirusync/core';
 import { DesktopLayout } from '../layouts/DesktopLayout';
@@ -15,18 +24,163 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
 
+const ACCENT_OPTIONS: { key: AccentColor; label: string; swatch: string }[] = [
+  { key: 'sky', label: 'Sky', swatch: 'bg-sky-500' },
+  { key: 'indigo', label: 'Indigo', swatch: 'bg-indigo-500' },
+  { key: 'emerald', label: 'Emerald', swatch: 'bg-emerald-500' },
+  { key: 'rose', label: 'Rose', swatch: 'bg-rose-500' },
+  { key: 'amber', label: 'Amber', swatch: 'bg-amber-500' },
+];
+
+interface ParsedImportPreview {
+  fileName: string;
+  totalParsed: number;
+  readyUpdates: EntryUpdate[];
+  skippedCount: number;
+}
+
+function mapMalXmlStatus(raw: string): ListStatus {
+  const s = raw.trim().toLowerCase();
+  if (s === 'watching' || s === 'reading') return 'CURRENT';
+  if (s === 'completed') return 'COMPLETED';
+  if (s === 'on-hold' || s === 'on hold') return 'PAUSED';
+  if (s === 'dropped') return 'DROPPED';
+  return 'PLANNING';
+}
+
+function resolveTargetMediaId(
+  provider: ProviderId,
+  alId?: number,
+  malId?: number,
+  rawId?: string
+): string | null {
+  if (provider === 'mal') {
+    if (malId) return `mal:${malId}`;
+    if (rawId?.startsWith('mal:')) return rawId;
+    return null;
+  }
+  if (alId) return `al:${alId}`;
+  if (rawId?.startsWith('al:')) return rawId;
+  return null;
+}
+
+function parseImportFile(
+  fileName: string,
+  text: string,
+  provider: ProviderId
+): ParsedImportPreview {
+  const readyUpdates: EntryUpdate[] = [];
+  let totalParsed = 0;
+  let skippedCount = 0;
+
+  if (fileName.toLowerCase().endsWith('.json') || text.trim().startsWith('{')) {
+    const parsed = JSON.parse(text) as {
+      anime?: ListEntry[];
+      manga?: ListEntry[];
+    };
+    const all = [...(parsed.anime ?? []), ...(parsed.manga ?? [])];
+    totalParsed = all.length;
+
+    for (const entry of all) {
+      const targetId = resolveTargetMediaId(
+        provider,
+        entry.media?.alId,
+        entry.media?.malId,
+        entry.media?.id
+      );
+      if (!targetId || !entry.media?.type) {
+        skippedCount += 1;
+        continue;
+      }
+      readyUpdates.push({
+        mediaId: targetId,
+        type: entry.media.type,
+        status: entry.status,
+        progress: entry.progress,
+        progressVolumes: entry.progressVolumes,
+        score: entry.score,
+        startedAt: entry.startedAt,
+        completedAt: entry.completedAt,
+        repeat: entry.repeat,
+        notes: entry.notes,
+      });
+    }
+    return { fileName, totalParsed, readyUpdates, skippedCount };
+  }
+
+  // MAL XML export format
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.querySelector('parsererror')) {
+    throw new Error('Invalid JSON or MAL XML file.');
+  }
+
+  const animeNodes = Array.from(doc.querySelectorAll('myanimelist > anime'));
+  const mangaNodes = Array.from(doc.querySelectorAll('myanimelist > manga'));
+  totalParsed = animeNodes.length + mangaNodes.length;
+
+  for (const node of animeNodes) {
+    const malId = Number(node.querySelector('series_animedb_id')?.textContent || '0');
+    const targetId = resolveTargetMediaId(provider, undefined, malId);
+    if (!targetId) {
+      skippedCount += 1;
+      continue;
+    }
+    const rawScore = Number(node.querySelector('my_score')?.textContent || '0');
+    readyUpdates.push({
+      mediaId: targetId,
+      type: 'ANIME',
+      status: mapMalXmlStatus(node.querySelector('my_status')?.textContent || ''),
+      progress: Number(node.querySelector('my_watched_episodes')?.textContent || '0'),
+      score: rawScore > 0 ? rawScore * 10 : undefined,
+    });
+  }
+
+  for (const node of mangaNodes) {
+    const malId = Number(node.querySelector('manga_mangadb_id')?.textContent || '0');
+    const targetId = resolveTargetMediaId(provider, undefined, malId);
+    if (!targetId) {
+      skippedCount += 1;
+      continue;
+    }
+    const rawScore = Number(node.querySelector('my_score')?.textContent || '0');
+    readyUpdates.push({
+      mediaId: targetId,
+      type: 'MANGA',
+      status: mapMalXmlStatus(node.querySelector('my_status')?.textContent || ''),
+      progress: Number(node.querySelector('my_read_chapters')?.textContent || '0'),
+      progressVolumes: Number(node.querySelector('my_read_volumes')?.textContent || '0'),
+      score: rawScore > 0 ? rawScore * 10 : undefined,
+    });
+  }
+
+  return { fileName, totalParsed, readyUpdates, skippedCount };
+}
+
 export function SettingsPage() {
   const session = useAuthStore((s) => s.session);
   const logoutWeb = useAuthStore((s) => s.logoutWeb);
+  const provider = useProvider();
   const { settings, updateSettings, syncing } = useSettingsSync(
     SUPABASE_URL,
     SUPABASE_ANON_KEY
   );
+  const scoreFormatOverride = useLocalPrefsStore((s) => s.scoreFormatOverride);
+  const setScoreFormatOverride = useLocalPrefsStore((s) => s.setScoreFormatOverride);
+  const checkFrequency = useLocalPrefsStore((s) => s.checkFrequency);
+  const setCheckFrequency = useLocalPrefsStore((s) => s.setCheckFrequency);
+
   const { data: animeList } = useMediaList('ANIME');
   const { data: mangaList } = useMediaList('MANGA');
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [pushMessage, setPushMessage] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [importPreview, setImportPreview] = useState<ParsedImportPreview | null>(null);
+  const [importProgress, setImportProgress] = useState<{
+    done: number;
+    total: number;
+    failed: number;
+  } | null>(null);
 
   function handleExportBackup() {
     const payload = {
@@ -45,6 +199,45 @@ export function SettingsPage() {
     a.download = `mirusync-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function handleSelectImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !session) return;
+    try {
+      const text = await file.text();
+      const preview = parseImportFile(file.name, text, session.provider);
+      setImportPreview(preview);
+      setImportProgress(null);
+      setPushMessage(null);
+    } catch (err) {
+      setPushMessage(err instanceof Error ? err.message : 'Failed to parse backup file.');
+      setImportPreview(null);
+    } finally {
+      e.target.value = '';
+    }
+  }
+
+  async function handleRunImport() {
+    if (!importPreview || !provider) return;
+    const items = importPreview.readyUpdates;
+    let done = 0;
+    let failed = 0;
+    setImportProgress({ done: 0, total: items.length, failed: 0 });
+
+    for (const update of items) {
+      try {
+        await provider.updateEntry(update);
+      } catch {
+        failed += 1;
+      }
+      done += 1;
+      setImportProgress({ done, total: items.length, failed });
+      await new Promise((r) => setTimeout(r, 350));
+    }
+    setPushMessage(
+      `Import finished: ${done - failed} synced${failed > 0 ? `, ${failed} failed` : ''}.`
+    );
   }
 
   async function handleClearCache() {
@@ -138,9 +331,72 @@ export function SettingsPage() {
                 <option value="native">Native (Japanese)</option>
               </select>
             </div>
+
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">
+                Default List Layout
+              </label>
+              <select
+                value={settings.list_layout}
+                onChange={(e) =>
+                  void updateSettings({
+                    list_layout: e.target.value as UserSettings['list_layout'],
+                  })
+                }
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              >
+                <option value="grid">Poster Grid</option>
+                <option value="list">Detailed List</option>
+                <option value="compact">Compact Rows</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">
+                Score Format Display
+              </label>
+              <select
+                value={scoreFormatOverride}
+                onChange={(e) =>
+                  setScoreFormatOverride(e.target.value as ScoreFormatOverride)
+                }
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              >
+                <option value="ACCOUNT">Follow Account Default</option>
+                <option value="POINT_100">100-Point (e.g. 85)</option>
+                <option value="POINT_10">10-Point (e.g. 9)</option>
+                <option value="POINT_10_DECIMAL">10-Point Decimal (e.g. 8.5)</option>
+                <option value="POINT_5">5-Star (e.g. 4★)</option>
+                <option value="POINT_3">3-Smiley (:))</option>
+              </select>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
+          <div>
+            <label className="block text-xs text-slate-400 mb-2">Accent Color</label>
+            <div className="flex flex-wrap gap-2">
+              {ACCENT_OPTIONS.map((opt) => {
+                const active = settings.accent_color === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => void updateSettings({ accent_color: opt.key })}
+                    className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors ${
+                      active
+                        ? 'border-sky-500/40 bg-sky-500/15 text-sky-300'
+                        : 'border-slate-700 bg-slate-950 text-slate-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className={`h-3 w-3 rounded-full ${opt.swatch}`} />
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-800/70">
             <div>
               <div className="text-sm font-medium text-slate-200">
                 Spoiler Blur
@@ -202,6 +458,75 @@ export function SettingsPage() {
             />
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800/70">
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">
+                Schedule Check Frequency
+              </label>
+              <select
+                value={checkFrequency}
+                onChange={(e) => setCheckFrequency(e.target.value as CheckFrequency)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              >
+                <option value="15m">Every 15 minutes</option>
+                <option value="30m">Every 30 minutes</option>
+                <option value="1h">Every hour</option>
+                <option value="6h">Every 6 hours</option>
+              </select>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-slate-400">Quiet Hours</label>
+                <input
+                  type="checkbox"
+                  checked={Boolean(settings.quiet_hours)}
+                  onChange={(e) =>
+                    void updateSettings({
+                      quiet_hours: e.target.checked
+                        ? { start: '23:00', end: '07:00' }
+                        : null,
+                    })
+                  }
+                  className="h-3.5 w-3.5 accent-sky-500 cursor-pointer"
+                />
+              </div>
+              {settings.quiet_hours ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="time"
+                    value={settings.quiet_hours.start}
+                    onChange={(e) =>
+                      void updateSettings({
+                        quiet_hours: {
+                          start: e.target.value,
+                          end: settings.quiet_hours?.end ?? '07:00',
+                        },
+                      })
+                    }
+                    className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-100"
+                  />
+                  <span className="text-xs text-slate-400">to</span>
+                  <input
+                    type="time"
+                    value={settings.quiet_hours.end}
+                    onChange={(e) =>
+                      void updateSettings({
+                        quiet_hours: {
+                          start: settings.quiet_hours?.start ?? '23:00',
+                          end: e.target.value,
+                        },
+                      })
+                    }
+                    className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-100"
+                  />
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 py-2">Disabled</p>
+              )}
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => void handleEnableWebPush()}
@@ -222,6 +547,14 @@ export function SettingsPage() {
             Data, Backup &amp; Privacy
           </h2>
 
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,.xml"
+            onChange={(e) => void handleSelectImportFile(e)}
+            className="hidden"
+          />
+
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -230,6 +563,15 @@ export function SettingsPage() {
             >
               <Download className="h-3.5 w-3.5" />
               Export JSON Backup
+            </button>
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-200 cursor-pointer"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Import JSON / MAL XML
             </button>
 
             <button
@@ -248,6 +590,76 @@ export function SettingsPage() {
               Privacy Policy
             </Link>
           </div>
+
+          {importPreview && (
+            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="font-medium text-slate-200">
+                  {importPreview.fileName}
+                </span>
+                <span className="font-mono text-slate-400">
+                  {importPreview.readyUpdates.length} ready · {importPreview.skippedCount} skipped
+                  ({importPreview.totalParsed} total)
+                </span>
+              </div>
+
+              {importProgress && (
+                <div className="space-y-1">
+                  <div className="text-[11px] font-mono text-sky-400">
+                    Syncing {importProgress.done} / {importProgress.total}…
+                  </div>
+                  <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full bg-sky-500 transition-all"
+                      style={{
+                        width: `${importProgress.total > 0 ? Math.round((importProgress.done / importProgress.total) * 100) : 0}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={importPreview.readyUpdates.length === 0 || Boolean(importProgress && importProgress.done < importProgress.total)}
+                  onClick={() => void handleRunImport()}
+                  className="rounded-lg bg-sky-500 hover:bg-sky-400 disabled:opacity-50 px-3.5 py-1.5 text-xs font-semibold text-slate-950 cursor-pointer"
+                >
+                  Apply Import to {session?.provider === 'mal' ? 'MAL' : 'AniList'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportPreview(null);
+                    setImportProgress(null);
+                  }}
+                  className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* About */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 space-y-2.5">
+          <div className="flex items-center gap-2">
+            <Info className="h-4 w-4 text-sky-400" />
+            <h2 className="text-sm font-semibold text-slate-200">About MiruSync</h2>
+            <span className="rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5 text-[10px] font-mono text-slate-400">
+              v1.1.0
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Unified anime and manga tracker powered by MyAnimeList API v2, AniList GraphQL,
+            MangaDex API, and Anime News Network RSS.
+          </p>
+          <p className="text-[11px] text-slate-500">
+            Open-source libraries: React, TypeScript, Vite, Tailwind CSS, TanStack Query,
+            Zustand, Dexie, Lucide Icons, and Capacitor.
+          </p>
         </section>
 
         {/* Danger Zone */}

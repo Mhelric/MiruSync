@@ -135,6 +135,9 @@ export interface AppUser {
   scoreFormat: ScoreFormat;
 }
 
+export type PopularKind = 'trending' | 'season' | 'upcoming' | 'alltime' | 'toprated';
+export type SearchSort = 'POPULARITY_DESC' | 'SCORE_DESC' | 'START_DATE_DESC';
+
 export interface SearchFilters {
   type: MediaType;
   genre?: string;
@@ -142,6 +145,8 @@ export interface SearchFilters {
   season?: string;
   format?: string;
   status?: string;
+  minScore?: number;
+  sort?: SearchSort;
   includeAdult?: boolean;
   page?: number;
   perPage?: number;
@@ -206,7 +211,7 @@ export interface MediaProvider {
   getMedia(id: string, type: MediaType): Promise<Media>;
   getPopular(
     type: MediaType,
-    kind: 'trending' | 'season' | 'alltime',
+    kind: PopularKind,
     page?: number
   ): Promise<Page<Media>>;
 }
