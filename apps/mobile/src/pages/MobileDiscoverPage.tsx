@@ -95,23 +95,77 @@ export function MobileDiscoverPage() {
   const addRecentSearch = useLocalPrefsStore((s) => s.addRecentSearch);
   const clearRecentSearches = useLocalPrefsStore((s) => s.clearRecentSearches);
 
+  // Search filters (persisted across navigation so Back doesn't reset)
+  const [savedSearch] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem('mirusync_mobile_discover_search');
+      return raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const [tab, setTab] = useState<DiscoverTab>(initialTab);
-  const [mediaType, setMediaType] = useState<MediaType>('ANIME');
+  const [mediaType, setMediaType] = useState<MediaType>(
+    (savedSearch.mediaType as MediaType) || 'ANIME'
+  );
   const [popularKind, setPopularKind] = useState<PopularKind>('trending');
   const [newKind, setNewKind] = useState<NewReleaseTab>('just_aired');
 
-  // Search filters
-  const [query, setQuery] = useState('');
-  const [genre, setGenre] = useState('');
-  const [tag, setTag] = useState('');
-  const [format, setFormat] = useState('');
-  const [status, setStatus] = useState('');
-  const [minScore, setMinScore] = useState('');
-  const [season, setSeason] = useState('');
-  const [year, setYear] = useState('');
-  const [showAdvFilters, setShowAdvFilters] = useState(false);
-  const [sort, setSort] = useState<SearchSort>('POPULARITY_DESC');
-  const [includeAdult, setIncludeAdult] = useState(showAdult);
+  const [query, setQuery] = useState((savedSearch.query as string) || '');
+  const [genre, setGenre] = useState((savedSearch.genre as string) || '');
+  const [tag, setTag] = useState((savedSearch.tag as string) || '');
+  const [format, setFormat] = useState((savedSearch.format as string) || '');
+  const [status, setStatus] = useState((savedSearch.status as string) || '');
+  const [minScore, setMinScore] = useState((savedSearch.minScore as string) || '');
+  const [season, setSeason] = useState((savedSearch.season as string) || '');
+  const [year, setYear] = useState((savedSearch.year as string) || '');
+  const [showAdvFilters, setShowAdvFilters] = useState(
+    Boolean(savedSearch.showAdvFilters)
+  );
+  const [sort, setSort] = useState<SearchSort>(
+    (savedSearch.sort as SearchSort) || 'POPULARITY_DESC'
+  );
+  const [includeAdult, setIncludeAdult] = useState(
+    typeof savedSearch.includeAdult === 'boolean' ? savedSearch.includeAdult : showAdult
+  );
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        'mirusync_mobile_discover_search',
+        JSON.stringify({
+          mediaType,
+          query,
+          genre,
+          tag,
+          format,
+          status,
+          minScore,
+          season,
+          year,
+          showAdvFilters,
+          sort,
+          includeAdult,
+        })
+      );
+    } catch {
+      // Ignore storage errors
+    }
+  }, [
+    mediaType,
+    query,
+    genre,
+    tag,
+    format,
+    status,
+    minScore,
+    season,
+    year,
+    showAdvFilters,
+    sort,
+    includeAdult,
+  ]);
 
   // Calendar selected day
   const [selectedDay, setSelectedDay] = useState<string>('');
