@@ -74,178 +74,126 @@ const THEME_STYLES: Record<
   },
 };
 
-function SkyBackdrop({ phase }: { phase: TimeOfDayPhase }) {
-  if (phase === 'day') {
-    return (
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Radiant animated Sun */}
-        <div className="absolute -top-6 right-5 h-24 w-24 flex items-center justify-center">
-          <div
-            className="absolute inset-0 rounded-full animate-sun-spin opacity-55"
-            style={{
-              background:
-                'repeating-conic-gradient(from 0deg, rgba(251, 191, 36, 0.45) 0deg 12deg, transparent 12deg 30deg)',
-              maskImage: 'radial-gradient(circle, black 35%, transparent 72%)',
-              WebkitMaskImage: 'radial-gradient(circle, black 35%, transparent 72%)',
-            }}
-          />
-          <div
-            className="h-12 w-12 rounded-full animate-sun-pulse"
-            style={{
-              background: 'radial-gradient(circle, #fef08a 0%, #fbbf24 70%, #f59e0b 100%)',
-              boxShadow: '0 0 28px rgba(251, 191, 36, 0.75)',
-            }}
-          />
-        </div>
-        {/* Drifting anime cumulus clouds */}
-        <div
-          className="absolute top-6 right-28 h-6 w-20 rounded-full animate-cloud-drift opacity-75"
-          style={{
-            background: 'rgba(255, 255, 255, 0.85)',
-            boxShadow: '12px -4px 0 2px rgba(255,255,255,0.85), -10px 2px 0 0px rgba(255,255,255,0.75)',
-          }}
-        />
-        <div
-          className="absolute bottom-3 right-10 h-5 w-16 rounded-full animate-cloud-drift opacity-60"
-          style={{
-            animationDelay: '-4s',
-            background: 'rgba(255, 255, 255, 0.8)',
-            boxShadow: '10px -3px 0 1px rgba(255,255,255,0.8)',
-          }}
-        />
-      </div>
-    );
-  }
+const flat = { transformBox: 'fill-box', transformOrigin: 'center' } as const;
 
-  if (phase === 'dawn') {
-    return (
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Rising horizon sun */}
-        <div
-          className="absolute -bottom-8 right-8 h-24 w-24 rounded-full animate-sun-pulse"
-          style={{
-            background: 'radial-gradient(circle, #fef08a 0%, #fda4af 65%, transparent 100%)',
-            boxShadow: '0 0 40px rgba(253, 186, 116, 0.7)',
-          }}
-        />
-        {/* Pastel mist */}
-        <div
-          className="absolute top-5 right-16 h-6 w-28 rounded-full blur-md animate-cloud-drift opacity-40"
-          style={{ background: '#fbcfe8' }}
-        />
-        {/* Floating light motes */}
-        <span
-          className="absolute top-7 right-36 h-1.5 w-1.5 rounded-full bg-amber-200 animate-mote-float"
-        />
-        <span
-          className="absolute bottom-8 right-28 h-2 w-2 rounded-full bg-pink-200 animate-mote-float"
-          style={{ animationDelay: '-2.4s' }}
-        />
-        <span
-          className="absolute top-12 right-10 h-1 w-1 rounded-full bg-amber-100 animate-mote-float"
-          style={{ animationDelay: '-3.8s' }}
-        />
-      </div>
-    );
-  }
-
-  if (phase === 'dusk') {
-    return (
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Setting twilight sun */}
-        <div
-          className="absolute -bottom-7 right-7 h-24 w-24 rounded-full animate-sun-pulse"
-          style={{
-            background: 'radial-gradient(circle, #fde047 0%, #fb7185 68%, transparent 100%)',
-            boxShadow: '0 0 44px rgba(251, 146, 60, 0.75)',
-          }}
-        />
-        {/* Evening cloud streak */}
-        <div
-          className="absolute top-6 right-20 h-4 w-28 rounded-full blur-sm animate-cloud-drift opacity-40"
-          style={{ background: 'linear-gradient(90deg, transparent, #fed7aa, transparent)' }}
-        />
-        {/* Subtle anime hill horizon silhouette */}
-        <svg
-          viewBox="0 0 400 40"
-          preserveAspectRatio="none"
-          className="absolute bottom-0 inset-x-0 h-6 w-full opacity-25"
-        >
-          <path d="M0,40 L0,26 Q90,10 180,24 T360,18 L400,24 L400,40 Z" fill="#090616" />
-        </svg>
-      </div>
-    );
-  }
-
-  if (phase === 'night') {
-    return (
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Crescent Moon */}
-        <div className="absolute top-4 right-7 h-11 w-11 animate-moon-float">
-          <div
-            className="h-11 w-11 rounded-full"
-            style={{
-              background: 'transparent',
-              boxShadow: '-7px 3px 0 2px #fef9c3',
-              filter: 'drop-shadow(0 0 12px rgba(254, 249, 195, 0.55))',
-            }}
-          />
-        </div>
-        {/* Twinkling Stars */}
-        <span className="absolute top-4 right-24 h-1.5 w-1.5 rounded-full bg-sky-200 animate-star-twinkle" />
-        <span
-          className="absolute top-12 right-36 h-1 w-1 rounded-full bg-white animate-star-twinkle"
-          style={{ animationDelay: '-1.1s' }}
-        />
-        <span
-          className="absolute bottom-8 right-20 h-1.5 w-1.5 rounded-full bg-indigo-200 animate-star-twinkle"
-          style={{ animationDelay: '-2.2s' }}
-        />
-        <span
-          className="absolute top-6 right-44 h-1 w-1 rounded-full bg-sky-100 animate-star-twinkle"
-          style={{ animationDelay: '-0.6s' }}
-        />
-        {/* Shooting star */}
-        <div
-          className="absolute top-5 right-16 h-[2px] w-14 rounded-full animate-shooting-star"
-          style={{
-            background: 'linear-gradient(90deg, #ffffff, rgba(125, 211, 252, 0))',
-          }}
-        />
-      </div>
-    );
-  }
-
-  // midnight
+function Dot({
+  cx,
+  cy,
+  r = 1.6,
+  fill = '#ffffff',
+  delay = 0,
+}: {
+  cx: number;
+  cy: number;
+  r?: number;
+  fill?: string;
+  delay?: number;
+}) {
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-      {/* Cosmic Aurora */}
-      <div
-        className="absolute -top-10 -right-8 h-36 w-48 rounded-full blur-2xl animate-aurora opacity-45"
-        style={{ background: 'linear-gradient(135deg, #4f46e5, #06b6d4)' }}
-      />
-      {/* Silver Moon */}
-      <div
-        className="absolute top-4 right-7 h-9 w-9 rounded-full animate-moon-float"
-        style={{
-          background: 'radial-gradient(circle at 35% 35%, #f8fafc 0%, #cbd5e1 100%)',
-          boxShadow: '0 0 20px rgba(165, 180, 252, 0.5)',
-        }}
-      />
-      {/* Starfield & Firefly motes */}
-      <span className="absolute top-5 right-24 h-1 w-1 rounded-full bg-indigo-200 animate-star-twinkle" />
-      <span
-        className="absolute top-14 right-32 h-1.5 w-1.5 rounded-full bg-cyan-300 animate-mote-float"
-        style={{ animationDelay: '-1.8s' }}
-      />
-      <span
-        className="absolute bottom-6 right-16 h-1.5 w-1.5 rounded-full bg-indigo-300 animate-mote-float"
-        style={{ animationDelay: '-3.1s' }}
-      />
-    </div>
+    <circle
+      cx={cx}
+      cy={cy}
+      r={r}
+      fill={fill}
+      className="animate-star-twinkle"
+      style={{ ...flat, animationDelay: `-${delay}s` }}
+    />
   );
 }
 
+function Cloud({
+  x,
+  y,
+  w = 46,
+  fill,
+  opacity = 0.85,
+  delay = 0,
+}: {
+  x: number;
+  y: number;
+  w?: number;
+  fill: string;
+  opacity?: number;
+  delay?: number;
+}) {
+  return (
+    <rect
+      x={x}
+      y={y}
+      width={w}
+      height={8}
+      rx={4}
+      fill={fill}
+      opacity={opacity}
+      className="animate-cloud-drift"
+      style={{ animationDelay: `-${delay}s` }}
+    />
+  );
+}
+
+function SkyBackdrop({ phase }: { phase: TimeOfDayPhase }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 400 120"
+      preserveAspectRatio="xMaxYMid slice"
+      className="pointer-events-none absolute inset-0 h-full w-full"
+    >
+      {phase === 'day' && (
+        <>
+          <circle cx={348} cy={34} r={22} fill="none" stroke="#f59e0b" strokeWidth={1.5} opacity={0.5} className="animate-sun-pulse" style={flat} />
+          <circle cx={348} cy={34} r={14} fill="#f59e0b" />
+          <Cloud x={262} y={24} fill="#ffffff" />
+          <Cloud x={300} y={84} w={36} fill="#ffffff" opacity={0.7} delay={4} />
+        </>
+      )}
+
+      {phase === 'dawn' && (
+        <>
+          <path d="M296 120 A32 32 0 0 1 360 120 Z" fill="#fde68a" className="animate-sun-pulse" style={flat} />
+          <Cloud x={268} y={30} fill="#fbcfe8" opacity={0.6} />
+          <Cloud x={326} y={52} w={34} fill="#fbcfe8" opacity={0.5} delay={4} />
+          <Dot cx={250} cy={24} fill="#fef3c7" delay={1} />
+          <Dot cx={380} cy={26} fill="#fef3c7" delay={2.4} />
+        </>
+      )}
+
+      {phase === 'dusk' && (
+        <>
+          <path d="M300 120 A30 30 0 0 1 360 120 Z" fill="#fbbf24" className="animate-sun-pulse" style={flat} />
+          <Cloud x={262} y={30} fill="#fed7aa" opacity={0.5} />
+          <Cloud x={330} y={54} w={32} fill="#fed7aa" opacity={0.4} delay={4} />
+          <path d="M0 120 V104 Q100 90 200 102 T400 98 V120 Z" fill="#000000" opacity={0.18} />
+        </>
+      )}
+
+      {phase === 'night' && (
+        <>
+          <path
+            d="M350 16 a20 20 0 1 0 14 34 a16 16 0 1 1 -14 -34 Z"
+            fill="#fef9c3"
+            className="animate-moon-float"
+          />
+          <Dot cx={290} cy={24} delay={0} />
+          <Dot cx={318} cy={64} r={1.2} fill="#bae6fd" delay={1.1} />
+          <Dot cx={268} cy={78} r={1.2} delay={2.2} />
+          <Dot cx={384} cy={80} r={1.4} fill="#bae6fd" delay={0.6} />
+        </>
+      )}
+
+      {phase === 'midnight' && (
+        <>
+          <circle cx={352} cy={34} r={14} fill="#e2e8f0" className="animate-moon-float" />
+          <circle cx={352} cy={34} r={22} fill="none" stroke="#a5b4fc" strokeWidth={1} opacity={0.4} className="animate-sun-pulse" style={flat} />
+          <Dot cx={286} cy={22} fill="#c7d2fe" delay={0} />
+          <Dot cx={312} cy={70} r={1.2} fill="#a5f3fc" delay={1.8} />
+          <Dot cx={270} cy={88} r={1.2} fill="#c7d2fe" delay={3.1} />
+          <Dot cx={382} cy={84} r={1.4} fill="#c7d2fe" delay={0.9} />
+        </>
+      )}
+    </svg>
+  );
+}
 export function TimeGreetingCard({
   username,
   animeCount,
@@ -315,7 +263,7 @@ export function TimeGreetingCard({
           >
             <Tv className="h-4 w-4 animate-float-idle" style={{ color: theme.accentColor }} />
             <span className="text-base font-bold font-mono" style={{ color: theme.accentColor }}>
-              {animeCount ?? '—'}
+              {animeCount ?? 'â€”'}
             </span>
             <span className="text-xs font-medium" style={{ color: theme.textColor }}>
               Anime
@@ -334,7 +282,7 @@ export function TimeGreetingCard({
               style={{ color: theme.accentColor, animationDelay: '-1.5s' }}
             />
             <span className="text-base font-bold font-mono" style={{ color: theme.accentColor }}>
-              {mangaCount ?? '—'}
+              {mangaCount ?? 'â€”'}
             </span>
             <span className="text-xs font-medium" style={{ color: theme.textColor }}>
               Manga
