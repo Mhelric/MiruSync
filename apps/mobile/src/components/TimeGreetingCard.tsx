@@ -137,7 +137,7 @@ export function TimeGreetingCard({
           >
             <Tv className="h-4 w-4 animate-float-idle" style={{ color: theme.accentColor }} />
             <span className="text-base font-bold font-mono" style={{ color: theme.accentColor }}>
-              {animeCount ?? 'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â'}
+              {animeCount ?? '—'}
             </span>
             <span className="text-xs font-medium" style={{ color: theme.textColor }}>
               Anime
@@ -156,7 +156,7 @@ export function TimeGreetingCard({
               style={{ color: theme.accentColor, animationDelay: '-1.5s' }}
             />
             <span className="text-base font-bold font-mono" style={{ color: theme.accentColor }}>
-              {mangaCount ?? 'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â'}
+              {mangaCount ?? '—'}
             </span>
             <span className="text-xs font-medium" style={{ color: theme.textColor }}>
               Manga
