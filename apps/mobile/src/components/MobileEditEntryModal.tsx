@@ -66,7 +66,7 @@ export function MobileEditEntryModal({
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-t-3xl border-t border-white/15 bg-slate-900 p-5 pb-8 shadow-2xl space-y-5"
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-3xl border-t border-white/15 bg-slate-900 p-4 sm:p-5 pb-8 shadow-2xl space-y-4 sm:space-y-5"
       >
         <div className="mx-auto h-1 w-10 rounded-full bg-slate-700" />
 

@@ -416,3 +416,16 @@ html[data-accent]:not([data-accent="sky"]) .border-sky-500\/40 {
 .animate-mote-float {
   animation: mote-float 5s ease-in-out infinite;
 }
+
+/* Responsive scaling for compact phones like Samsung Galaxy J2 Pro (360x640 / 320px zoomed) */
+@media (max-width: 380px) {
+  html:not([data-text-scale]) {
+    font-size: 14.5px;
+  }
+}
+
+@media (max-width: 340px) {
+  html:not([data-text-scale]) {
+    font-size: 13.5px;
+  }
+}

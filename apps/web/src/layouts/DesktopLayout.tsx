@@ -287,7 +287,7 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-3 sm:p-6 pb-24 md:pb-6 max-w-7xl w-full mx-auto min-w-0">
+        <main className="flex-1 p-2.5 sm:p-6 pb-24 md:pb-6 max-w-7xl w-full mx-auto min-w-0">
           {children}
         </main>
       </div>
@@ -379,7 +379,7 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+              `flex flex-col items-center justify-center gap-1 text-[10px] min-[360px]:text-[11px] font-medium transition-colors ${
                 isActive ? 'text-sky-400' : 'text-slate-400'
               }`
             }
@@ -392,7 +392,7 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
         <button
           type="button"
           onClick={() => setMobileDiscoverOpen((prev) => !prev)}
-          className={`flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-1 text-[10px] min-[360px]:text-[11px] font-medium transition-colors cursor-pointer ${
             mobileDiscoverOpen || isDiscoverRoute ? 'text-sky-400' : 'text-slate-400'
           }`}
         >
@@ -403,7 +403,7 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
         <NavLink
           to="/profile"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+            `flex flex-col items-center justify-center gap-1 text-[10px] min-[360px]:text-[11px] font-medium transition-colors ${
               isActive ? 'text-sky-400' : 'text-slate-400'
             }`
           }

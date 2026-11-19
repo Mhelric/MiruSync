@@ -32,7 +32,7 @@ export function MobileLayout({
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col overflow-x-clip">
       {/* Native-style Glass Top App Bar */}
       <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
         {updateInfo && (
@@ -125,7 +125,7 @@ export function MobileLayout({
       </header>
 
       {/* Main Scroll Area */}
-      <main className={`flex-1 px-3.5 pt-4 ${hideBottomNav ? 'pb-8' : 'pb-28'} min-w-0`}>
+      <main className={`flex-1 px-3 sm:px-3.5 pt-3.5 sm:pt-4 ${hideBottomNav ? 'pb-8' : 'pb-28'} min-w-0`}>
         {children}
       </main>
 
@@ -133,9 +133,9 @@ export function MobileLayout({
       {!hideBottomNav && (
         <nav
           aria-label="Mobile navigation"
-          className="fixed bottom-1.5 left-2.5 right-2.5 z-40 rounded-2xl border border-white/10 bg-slate-900/90 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.65)] px-2 py-2 mb-[env(safe-area-inset-bottom)]"
+          className="fixed bottom-1.5 left-2 right-2 sm:left-2.5 sm:right-2.5 z-40 rounded-2xl border border-white/10 bg-slate-900/90 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.65)] px-1.5 sm:px-2 py-2 mb-[env(safe-area-inset-bottom)]"
         >
-          <div className="grid grid-cols-5 gap-1">
+          <div className="grid grid-cols-5 gap-0.5 sm:gap-1">
             {TABS.map(({ path, label, icon: Icon }) => {
               const active = location.pathname === path;
               const isIdleAnimated = path === '/anime' || path === '/manga';
@@ -144,7 +144,7 @@ export function MobileLayout({
                   key={path}
                   type="button"
                   onClick={() => navigate(path)}
-                  className={`flex flex-col items-center justify-center gap-1 rounded-xl py-2 text-[11px] font-medium transition-all cursor-pointer ${
+                  className={`flex flex-col items-center justify-center gap-1 rounded-xl py-1.5 sm:py-2 text-[10px] min-[360px]:text-[11px] font-medium transition-all cursor-pointer ${
                     active
                       ? 'bg-sky-500/15 text-sky-400 font-semibold'
                       : 'text-slate-400 active:scale-95'
