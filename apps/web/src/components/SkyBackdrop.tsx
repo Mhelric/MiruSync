@@ -43,19 +43,17 @@ export function SkyBackdrop({ phase }: { phase: TimeOfDayPhase }) {
                 <line
                   key={i}
                   x1="176"
-                  y1="26"
+                  y1="13"
                   x2="176"
-                  y2="16"
-                  stroke="#f59e0b"
-                  strokeWidth="2.4"
+                  y2="19"
+                  stroke="#ffcc00"
+                  strokeWidth="4.4"
                   strokeLinecap="round"
-                  opacity="0.7"
                   transform={`rotate(${i * 45} 176 38)`}
                 />
               ))}
             </g>
-            <circle cx="176" cy="38" r="15" fill="#fbbf24" />
-            <circle cx="176" cy="38" r="21" fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.45" />
+            <circle cx="176" cy="38" r="14" fill="#ffcc00" />
             <Cloud x={112} y={22} fill="#ffffff" opacity={0.9} />
             <Cloud x={150} y={78} scale={0.8} fill="#ffffff" opacity={0.7} d={-4} />
           </>
@@ -63,8 +61,22 @@ export function SkyBackdrop({ phase }: { phase: TimeOfDayPhase }) {
 
         {phase === 'dawn' && (
           <>
-            <circle cx="170" cy="96" r="26" fill="#fda4af" />
-            <circle cx="170" cy="96" r="34" fill="none" stroke="#fde68a" strokeWidth="1.2" opacity="0.6" />
+            <g className="animate-sun-pulse" style={BOX}>
+              <circle cx="170" cy="96" r="24" fill="#fda4af" />
+              {[-90, -45, 0, 45, 90].map((a) => (
+                <line
+                  key={a}
+                  x1="170"
+                  y1="62"
+                  x2="170"
+                  y2="68"
+                  stroke="#fcd34d"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  transform={`rotate(${a} 170 96)`}
+                />
+              ))}
+            </g>
             <g stroke="#fde68a" strokeWidth="2" strokeLinecap="round" opacity="0.55">
               <line className="animate-cloud-drift" style={BOX} x1="96" y1="34" x2="140" y2="34" />
               <line className="animate-cloud-drift" style={delay(-3)} x1="116" y1="46" x2="152" y2="46" />
@@ -79,11 +91,24 @@ export function SkyBackdrop({ phase }: { phase: TimeOfDayPhase }) {
           <>
             <defs>
               <clipPath id="dusk-sun">
-                <circle cx="170" cy="82" r="28" />
+                <circle cx="170" cy="82" r="26" />
               </clipPath>
             </defs>
             <g className="animate-sun-pulse" style={BOX}>
-              <circle cx="170" cy="82" r="28" fill="#fb923c" />
+              <circle cx="170" cy="82" r="26" fill="#fb923c" />
+              {[-90, -45, 0, 45, 90].map((a) => (
+                <line
+                  key={a}
+                  x1="170"
+                  y1="48"
+                  x2="170"
+                  y2="54"
+                  stroke="#fdba74"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  transform={`rotate(${a} 170 82)`}
+                />
+              ))}
               <g clipPath="url(#dusk-sun)" fill="#7c2d56" opacity="0.55">
                 <rect x="140" y="84" width="60" height="2.5" />
                 <rect x="140" y="91" width="60" height="3.5" />
@@ -149,7 +174,6 @@ export function SkyBackdrop({ phase }: { phase: TimeOfDayPhase }) {
               <circle cx="188" cy="62" r="15" fill="#e2e8f0" />
               <circle cx="183" cy="58" r="3" fill="#cbd5e1" />
               <circle cx="193" cy="67" r="2" fill="#cbd5e1" />
-              <circle cx="188" cy="62" r="21" fill="none" stroke="#a5b4fc" strokeWidth="1" opacity="0.4" />
             </g>
             <Sparkle x={130} y={72} s={3.5} fill="#a5b4fc" />
             <Sparkle x={104} y={92} s={2.5} d={-1.2} fill="#c7d2fe" />
