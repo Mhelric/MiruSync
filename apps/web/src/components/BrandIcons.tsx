@@ -43,8 +43,8 @@ export function MiruSyncLogo({ className = 'h-8 w-8' }: { className?: string }) 
           </feMerge>
         </filter>
       </defs>
-      <rect width="64" height="64" rx="16" fill="#090d1a" />
-      <rect width="64" height="64" rx="16" fill={`url(#${ambientGlow})`} />
+      <rect width="64" height="64" rx="16" fill="#090d1a" className="ms-logo-bg transition-colors" />
+      <rect width="64" height="64" rx="16" fill={`url(#${ambientGlow})`} className="ms-logo-ambient transition-opacity" />
       <rect
         x="1.5"
         y="1.5"

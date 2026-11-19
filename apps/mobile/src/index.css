@@ -37,12 +37,12 @@
   animation: icon-pop 240ms ease-out;
 }
 
-/* White MS logo variant in light mode */
+/* White logo variant in light mode */
 html.light .ms-logo-bg {
   fill: #ffffff !important;
 }
-html.light .ms-logo-m {
-  stroke: #0f172a !important;
+html.light .ms-logo-ambient {
+  opacity: 0.35;
 }
 
 /* Appearance customizations: Text Scale, Radius, Card Style */
