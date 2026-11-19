@@ -52,7 +52,10 @@ export function MobileWelcomePage() {
   useEffect(() => {
     const preload = new Image();
     preload.src = SCENES[nextIdx].gifUrl;
+  }, [nextIdx]);
 
+  useEffect(() => {
+    if (!loaded) return;
     const duration = SCENES[sceneIdx]?.durationMs ?? 3000;
     const timer = setTimeout(() => {
       setPrevIdx(sceneIdx);
@@ -64,7 +67,7 @@ export function MobileWelcomePage() {
       setPlayCount((c) => c + 1);
     }, duration);
     return () => clearTimeout(timer);
-  }, [sceneIdx, nextIdx, playCount]);
+  }, [loaded, sceneIdx, playCount]);
 
   useEffect(() => {
     const sub = Browser.addListener('browserFinished', () => {
@@ -134,15 +137,10 @@ export function MobileWelcomePage() {
 
       {/* True Translucent Glassmorphism Sign-In Card */}
       <div className="relative z-10 w-full max-w-sm rounded-3xl overflow-hidden bg-slate-950/35 backdrop-blur-[2px] border border-white/25 p-7 shadow-2xl space-y-5 text-white">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <MiruSyncLogo className="h-11 w-11 shrink-0 animate-float-idle" />
-            <span className="text-xl font-bold tracking-tight text-white">
-              Miru<span className="text-sky-400">Sync</span>
-            </span>
-          </div>
-          <span className="rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-medium text-white/90 truncate max-w-[125px]">
-            {SCENES[sceneIdx]?.title}
+        <div className="flex items-center gap-3">
+          <MiruSyncLogo className="h-11 w-11 shrink-0 animate-float-idle" />
+          <span className="text-xl font-bold tracking-tight text-white">
+            Miru<span className="text-sky-400">Sync</span>
           </span>
         </div>
 
