@@ -37,6 +37,7 @@ function pickRandomIndex(exclude?: number): number {
 
 export function MobileWelcomePage() {
   const [sceneIdx, setSceneIdx] = useState(() => pickRandomIndex());
+  const [prevIdx, setPrevIdx] = useState<number | null>(null);
   const [nextIdx, setNextIdx] = useState(() => pickRandomIndex(sceneIdx));
   const [playCount, setPlayCount] = useState(0);
   const [connecting, setConnecting] = useState<'mal' | 'anilist' | null>(null);
@@ -48,6 +49,7 @@ export function MobileWelcomePage() {
 
     const duration = SCENES[sceneIdx]?.durationMs ?? 3000;
     const timer = setTimeout(() => {
+      setPrevIdx(sceneIdx);
       setSceneIdx(nextIdx);
       setNextIdx(pickRandomIndex(nextIdx));
       setPlayCount((c) => c + 1);
@@ -93,11 +95,18 @@ export function MobileWelcomePage() {
 
       {/* Full-Screen Crisp Unblurred Anime Scene Background */}
       <div className="fixed inset-0 z-0 overflow-hidden bg-slate-950" aria-hidden="true">
+        {prevIdx !== null && (
+          <img
+            src={SCENES[prevIdx].gifUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-center"
+            style={{ imageRendering: 'auto' }}
+          />
+        )}
         <img
           key={`${SCENES[sceneIdx].gifUrl}-${playCount}`}
           src={SCENES[sceneIdx].gifUrl}
           alt={SCENES[sceneIdx].title}
-          decoding="async"
           className="absolute inset-0 h-full w-full object-cover object-center"
           style={{ imageRendering: 'auto' }}
         />

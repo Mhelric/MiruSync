@@ -56,6 +56,7 @@ export function WelcomePage() {
   const authError = searchParams.get('auth_error');
 
   const [activeIndex, setActiveIndex] = useState(() => pickRandomIndex());
+  const [prevIndex, setPrevIndex] = useState<number | null>(null);
   const [nextIndex, setNextIndex] = useState(() => pickRandomIndex(activeIndex));
   const [playCount, setPlayCount] = useState(0);
   const [connectingProvider, setConnectingProvider] = useState<'mal' | 'anilist' | null>(null);
@@ -66,6 +67,7 @@ export function WelcomePage() {
 
     const duration = SCENES[activeIndex]?.durationMs ?? 3000;
     const timer = setTimeout(() => {
+      setPrevIndex(activeIndex);
       setActiveIndex(nextIndex);
       setNextIndex(pickRandomIndex(nextIndex));
       setPlayCount((c) => c + 1);
@@ -85,6 +87,13 @@ export function WelcomePage() {
     <main className="relative min-h-screen flex items-center justify-center bg-slate-950 text-slate-50 p-6 overflow-hidden">
       {/* Animated 4-Anime Scene GIF Background Slideshow */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
+        {prevIndex !== null && (
+          <img
+            src={SCENES[prevIndex].gifUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover scale-105"
+          />
+        )}
         <img
           key={`${SCENES[activeIndex].gifUrl}-${playCount}`}
           src={SCENES[activeIndex].gifUrl}
