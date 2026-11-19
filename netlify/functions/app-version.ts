@@ -53,7 +53,7 @@ export default async function handler(_req: Request, _context: Context) {
           },
           {
             headers: {
-              'Cache-Control': 'public, max-age=60',
+              'Cache-Control': 'public, max-age=15, s-maxage=15',
             },
           }
         );

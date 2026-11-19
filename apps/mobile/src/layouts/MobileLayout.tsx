@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Compass, Home, Search, Settings, Tv, User } from 'lucide-react';
+import { ArrowLeft, BookOpen, Compass, Download, Home, Search, Settings, Tv, User } from 'lucide-react';
 import { useAuthStore } from '@mirusync/core';
 import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
+import { useUpdateStore } from '../lib/updateStore';
 
 const TABS = [
   { path: '/home', label: 'Home', icon: Home },
@@ -26,11 +27,26 @@ export function MobileLayout({
   const location = useLocation();
   const navigate = useNavigate();
   const session = useAuthStore((s) => s.session);
+  const updateInfo = useUpdateStore((s) => s.updateInfo);
+  const openUpdateModal = useUpdateStore((s) => s.openModal);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
       {/* Native-style Glass Top App Bar */}
       <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
+        {updateInfo && (
+          <button
+            type="button"
+            onClick={openUpdateModal}
+            className="w-full bg-sky-500/15 border-b border-sky-500/30 px-3.5 py-1.5 flex items-center justify-between gap-2 text-xs text-sky-300 cursor-pointer"
+          >
+            <span className="inline-flex items-center gap-1.5 font-medium truncate">
+              <Download className="h-3.5 w-3.5 shrink-0" />
+              Update v{updateInfo.version} available
+            </span>
+            <span className="font-semibold underline shrink-0">Tap to update</span>
+          </button>
+        )}
         <div className="h-14 px-3.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
             {showBack ? (

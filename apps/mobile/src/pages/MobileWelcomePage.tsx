@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Browser } from '@capacitor/browser';
+import { Download } from 'lucide-react';
 import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
 import { startMobileOAuth } from '../lib/mobileAuth';
+import { useUpdateStore } from '../lib/updateStore';
 
 const SCENES = [
   { title: 'Frieren', gifUrl: '/scenes/frieren.gif' },
@@ -18,6 +20,8 @@ const SCENES = [
 export function MobileWelcomePage() {
   const [sceneIdx, setSceneIdx] = useState(0);
   const [connecting, setConnecting] = useState<'mal' | 'anilist' | null>(null);
+  const updateInfo = useUpdateStore((s) => s.updateInfo);
+  const openUpdateModal = useUpdateStore((s) => s.openModal);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -48,6 +52,19 @@ export function MobileWelcomePage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-50 flex flex-col justify-between pb-[max(env(safe-area-inset-bottom),1.5rem)]">
+      {updateInfo && (
+        <button
+          type="button"
+          onClick={openUpdateModal}
+          className="fixed top-[max(env(safe-area-inset-top),0.75rem)] left-4 right-4 z-40 rounded-2xl border border-sky-400/40 bg-slate-900/90 backdrop-blur-xl px-3.5 py-2 flex items-center justify-between gap-2 text-xs text-sky-300 shadow-xl cursor-pointer"
+        >
+          <span className="inline-flex items-center gap-1.5 font-medium truncate">
+            <Download className="h-3.5 w-3.5 shrink-0" />
+            Update v{updateInfo.version} available
+          </span>
+          <span className="font-semibold underline shrink-0">Tap to update</span>
+        </button>
+      )}
       {/* Crisp High-Res Cinematic Anime Scene Showcase */}
       <div className="relative w-full h-[46vh] min-h-[300px] overflow-hidden bg-slate-950 shrink-0" aria-hidden="true">
         {SCENES.map((scene, idx) => (

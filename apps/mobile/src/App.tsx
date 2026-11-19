@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App as CapApp } from '@capacitor/app';
@@ -16,6 +16,7 @@ import {
   loadMobileSession,
 } from './lib/mobileAuth';
 import { syncAiringNotificationsAndWidget } from './lib/mobileSyncWidgets';
+import { useUpdateStore, type AppVersionInfo } from './lib/updateStore';
 import { MobileWelcomePage } from './pages/MobileWelcomePage';
 import { MobileHomePage } from './pages/MobileHomePage';
 import { MobileTrackerPage } from './pages/MobileTrackerPage';
@@ -26,13 +27,6 @@ import { MobileSettingsPage } from './pages/MobileSettingsPage';
 
 const FALLBACK_APP_VERSION =
   (import.meta.env.VITE_APP_VERSION as string | undefined) || '1.1.0';
-
-interface AppVersionInfo {
-  version: string;
-  apkUrl: string;
-  publishedAt?: string;
-  notes?: string[];
-}
 
 function isNewerVersion(remote: string, local: string): boolean {
   const clean = (v: string) =>
@@ -89,8 +83,10 @@ function MobileBackgroundSync() {
 function MobileRoutes() {
   const session = useAuthStore((s) => s.session);
   const setSession = useAuthStore((s) => s.setSession);
-  const [updateInfo, setUpdateInfo] = useState<AppVersionInfo | null>(null);
-  const [updateDismissed, setUpdateDismissed] = useState(false);
+  const updateInfo = useUpdateStore((s) => s.updateInfo);
+  const modalOpen = useUpdateStore((s) => s.modalOpen);
+  const setUpdateAvailable = useUpdateStore((s) => s.setUpdateAvailable);
+  const closeModal = useUpdateStore((s) => s.closeModal);
 
   useEffect(() => {
     setSession(loadMobileSession());
@@ -103,7 +99,7 @@ function MobileRoutes() {
     });
 
     let cancelled = false;
-    (async () => {
+    async function checkForUpdate() {
       let currentVersion = FALLBACK_APP_VERSION;
       try {
         const info = await CapApp.getInfo();
@@ -115,7 +111,7 @@ function MobileRoutes() {
       }
 
       try {
-        const res = await fetch(`${API_BASE}/api/app-version`, {
+        const res = await fetch(`${API_BASE}/api/app-version?t=${Date.now()}`, {
           cache: 'no-store',
         });
         if (!res.ok) return;
@@ -125,18 +121,30 @@ function MobileRoutes() {
           data?.version &&
           isNewerVersion(data.version, currentVersion)
         ) {
-          setUpdateInfo(data);
+          setUpdateAvailable(data);
         }
       } catch {
         // Offline or unreachable
       }
-    })();
+    }
+
+    void checkForUpdate();
+    const stateSub = CapApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) {
+        void checkForUpdate();
+      }
+    });
+    const poll = setInterval(() => {
+      void checkForUpdate();
+    }, 120_000);
 
     return () => {
       cancelled = true;
+      clearInterval(poll);
       void sub.then((handle) => handle.remove());
+      void stateSub.then((handle) => handle.remove());
     };
-  }, [setSession]);
+  }, [setSession, setUpdateAvailable]);
 
   return (
     <>
@@ -181,10 +189,10 @@ function MobileRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {updateInfo && !updateDismissed && (
+      {updateInfo && modalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-5"
-          onClick={() => setUpdateDismissed(true)}
+          onClick={closeModal}
         >
           <div
             className="w-full max-w-sm rounded-3xl border border-white/15 bg-slate-900/95 p-6 shadow-2xl space-y-4 text-slate-100"
@@ -206,7 +214,7 @@ function MobileRoutes() {
               </div>
               <button
                 type="button"
-                onClick={() => setUpdateDismissed(true)}
+                onClick={closeModal}
                 className="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
                 aria-label="Close update prompt"
               >
@@ -240,7 +248,7 @@ function MobileRoutes() {
               </button>
               <button
                 type="button"
-                onClick={() => setUpdateDismissed(true)}
+                onClick={closeModal}
                 className="w-full rounded-xl border border-slate-800 bg-slate-950/60 hover:bg-slate-800 py-2.5 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
               >
                 Later
