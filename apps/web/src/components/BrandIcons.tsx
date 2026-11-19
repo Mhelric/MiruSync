@@ -2,40 +2,83 @@ import { useId } from 'react';
 import { Globe } from 'lucide-react';
 
 export function MiruSyncLogo({ className = 'h-8 w-8' }: { className?: string }) {
-  const gradId = useId();
+  const id = useId();
+  const borderGrad = `${id}-border`;
+  const ambientGlow = `${id}-ambient`;
+  const topGrad = `${id}-top`;
+  const midGrad = `${id}-mid`;
+  const botGrad = `${id}-bot`;
+  const barGlow = `${id}-glow`;
+
   return (
     <svg viewBox="0 0 64 64" fill="none" className={className} aria-hidden="true">
       <defs>
-        <linearGradient id={gradId} x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+        <linearGradient id={borderGrad} x1="4" y1="4" x2="60" y2="60" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#38bdf8" />
-          <stop offset="100%" stopColor="#818cf8" />
+          <stop offset="50%" stopColor="#818cf8" />
+          <stop offset="100%" stopColor="#c084fc" />
         </linearGradient>
+        <radialGradient id={ambientGlow} cx="50%" cy="56%" r="46%">
+          <stop offset="0%" stopColor="#a855f7" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#090d1a" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={topGrad} x1="18" y1="15" x2="46" y2="23" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#9333ea" />
+          <stop offset="100%" stopColor="#6d28d9" />
+        </linearGradient>
+        <linearGradient id={midGrad} x1="18" y1="27" x2="43" y2="35" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#4f46e5" />
+          <stop offset="100%" stopColor="#5b21b6" />
+        </linearGradient>
+        <linearGradient id={botGrad} x1="16" y1="40" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#c026d3" />
+          <stop offset="55%" stopColor="#a855f7" />
+          <stop offset="100%" stopColor="#d946ef" />
+        </linearGradient>
+        <filter id={barGlow} x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="2.2" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
       <rect width="64" height="64" rx="16" fill="#090d1a" />
+      <rect width="64" height="64" rx="16" fill={`url(#${ambientGlow})`} />
       <rect
-        x="2"
-        y="2"
-        width="60"
-        height="60"
-        rx="14"
-        stroke={`url(#${gradId})`}
+        x="1.5"
+        y="1.5"
+        width="61"
+        height="61"
+        rx="14.5"
+        stroke={`url(#${borderGrad})`}
         strokeOpacity="0.45"
-        strokeWidth="2"
+        strokeWidth="1.5"
       />
-      <path
-        d="M12 43V21L21 34L30 21V43"
-        stroke="#F8FAFC"
-        strokeWidth="5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M51 23.5C50 21.5 47.8 20.5 44.8 20.5C41 20.5 38.5 22.5 38.5 25.5C38.5 28.5 41.2 30 44.8 31.2C48.8 32.5 51.5 34 51.5 37.5C51.5 41 48.5 43.2 44.5 43.2C41 43.2 38.6 41.8 37.5 39.5"
-        stroke={`url(#${gradId})`}
-        strokeWidth="5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <g transform="rotate(10 32 32)">
+        <path
+          d="M18.5 17.4 Q18.5 15 20.9 15 Q32 13.2 43.1 15 Q45.5 15 45.5 17.4 L45.5 20.1 Q45.5 22.5 43.1 22.5 Q32 20.7 20.9 22.5 Q18.5 22.5 18.5 20.1 Z"
+          fill={`url(#${topGrad})`}
+          stroke="#e9d5ff"
+          strokeOpacity="0.22"
+          strokeWidth="0.6"
+        />
+        <path
+          d="M18.5 29.9 Q18.5 27.5 20.9 27.5 Q30.5 25.9 40.1 27.5 Q42.5 27.5 42.5 29.9 L42.5 32.6 Q42.5 35 40.1 35 Q30.5 33.4 20.9 35 Q18.5 35 18.5 32.6 Z"
+          fill={`url(#${midGrad})`}
+          stroke="#c7d2fe"
+          strokeOpacity="0.18"
+          strokeWidth="0.6"
+        />
+        <path
+          d="M16.5 42.5 Q16.5 40 19 40 Q32 38.2 45 40 Q47.5 40 47.5 42.5 L47.5 45.5 Q47.5 48 45 48 Q32 46.2 19 48 Q16.5 48 16.5 45.5 Z"
+          fill={`url(#${botGrad})`}
+          stroke="#f5d0fe"
+          strokeOpacity="0.3"
+          strokeWidth="0.6"
+          filter={`url(#${barGlow})`}
+        />
+      </g>
     </svg>
   );
 }
