@@ -1,2 +1,156 @@
-@import "../../web/src/index.css";
-@source "../../web/src";
+@import "tailwindcss";
+
+/* Hide scrollbars on horizontal snap rails & pill strips */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes ken-burns {
+  0% { transform: scale(1) translate3d(0, 0, 0); }
+  100% { transform: scale(1.08) translate3d(-1%, -1%, 0); }
+}
+
+.animate-ken-burns {
+  animation: ken-burns 12s ease-out forwards;
+}
+
+/* GitHub-style activity heatmap levels */
+.gh-cell-0 {
+  background-color: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.gh-cell-1 { background-color: #0e4429; }
+.gh-cell-2 { background-color: #006d32; }
+.gh-cell-3 { background-color: #26a641; }
+.gh-cell-4 { background-color: #39d353; }
+
+html.light .gh-cell-0 {
+  background-color: #d4dce7 !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+html.light .gh-cell-1 { background-color: #9be9a8 !important; }
+html.light .gh-cell-2 { background-color: #40c463 !important; }
+html.light .gh-cell-3 { background-color: #30a14e !important; }
+html.light .gh-cell-4 { background-color: #216e39 !important; }
+
+/* Soft Slate light theme overrides when html.light is active */
+html.light body,
+html.light .bg-slate-950,
+html.light .bg-slate-950\/85,
+html.light .bg-slate-950\/80,
+html.light .bg-slate-950\/70 {
+  background-color: #dce2ec !important;
+  color: #111827 !important;
+}
+
+html.light .bg-slate-900,
+html.light .bg-slate-900\/95,
+html.light .bg-slate-900\/90,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/70,
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900\/50 {
+  background-color: #eef2f7 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+html.light .bg-slate-800,
+html.light .bg-slate-800\/90,
+html.light .bg-slate-800\/80,
+html.light .bg-slate-950\/60 {
+  background-color: #d0d8e4 !important;
+}
+
+html.light .text-slate-50,
+html.light .text-slate-100,
+html.light .text-slate-200 {
+  color: #111827 !important;
+}
+
+html.light .text-slate-300 { color: #293548 !important; }
+html.light .text-slate-400,
+html.light .text-slate-500 { color: #475569 !important; }
+
+html.light .border-slate-800,
+html.light .border-slate-800\/80,
+html.light .border-slate-700,
+html.light .border-white\/10,
+html.light .border-white\/15 {
+  border-color: #b9c4d4 !important;
+}
+
+html.light .text-sky-300,
+html.light .text-sky-400 { color: #0369a1 !important; }
+html.light .text-emerald-300,
+html.light .text-emerald-400 { color: #047857 !important; }
+html.light .text-rose-300,
+html.light .text-rose-400 { color: #be123c !important; }
+html.light .text-amber-300,
+html.light .text-amber-400 { color: #92400e !important; }
+html.light .text-indigo-300,
+html.light .text-indigo-400 { color: #3730a3 !important; }
+
+html.light .hero-banner {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+html.light .hero-banner .text-white { color: #ffffff !important; }
+html.light .hero-banner .text-slate-300 { color: #e2e8f0 !important; }
+html.light .hero-banner .text-sky-400,
+html.light .hero-banner .text-sky-300 { color: #38bdf8 !important; }
+html.light .hero-banner .text-amber-300 { color: #fcd34d !important; }
+
+/* Dynamic accent color theme overrides */
+html[data-accent="indigo"] {
+  --accent-solid: #6366f1;
+  --accent-text: #818cf8;
+  --accent-text-light: #4338ca;
+  --accent-tint: rgba(99, 102, 241, 0.14);
+  --accent-border: rgba(99, 102, 241, 0.35);
+}
+html[data-accent="emerald"] {
+  --accent-solid: #10b981;
+  --accent-text: #34d399;
+  --accent-text-light: #047857;
+  --accent-tint: rgba(16, 185, 129, 0.14);
+  --accent-border: rgba(16, 185, 129, 0.35);
+}
+html[data-accent="rose"] {
+  --accent-solid: #f43f5e;
+  --accent-text: #fb7185;
+  --accent-text-light: #be123c;
+  --accent-tint: rgba(244, 63, 94, 0.14);
+  --accent-border: rgba(244, 63, 94, 0.35);
+}
+html[data-accent="amber"] {
+  --accent-solid: #f59e0b;
+  --accent-text: #fbbf24;
+  --accent-text-light: #b45309;
+  --accent-tint: rgba(245, 158, 11, 0.14);
+  --accent-border: rgba(245, 158, 11, 0.35);
+}
+
+html[data-accent]:not([data-accent="sky"]) .text-sky-400,
+html[data-accent]:not([data-accent="sky"]) .text-sky-300 {
+  color: var(--accent-text) !important;
+}
+html.light[data-accent]:not([data-accent="sky"]) .text-sky-400,
+html.light[data-accent]:not([data-accent="sky"]) .text-sky-300 {
+  color: var(--accent-text-light) !important;
+}
+html[data-accent]:not([data-accent="sky"]) .bg-sky-500 {
+  background-color: var(--accent-solid) !important;
+}
+html[data-accent]:not([data-accent="sky"]) .bg-sky-500\/15,
+html[data-accent]:not([data-accent="sky"]) .bg-sky-500\/10 {
+  background-color: var(--accent-tint) !important;
+  border-color: var(--accent-border) !important;
+}
+html[data-accent]:not([data-accent="sky"]) .border-sky-500\/30,
+html[data-accent]:not([data-accent="sky"]) .border-sky-500\/40 {
+  border-color: var(--accent-border) !important;
+}

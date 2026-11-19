@@ -5,7 +5,6 @@ import { App as CapApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Download, Sparkles, X } from 'lucide-react';
 import {
-  setDefaultApiBase,
   useAuthStore,
   useMediaList,
   useSettingsStore,
@@ -15,23 +14,15 @@ import {
   API_BASE,
   exchangeMobileCallbackUrl,
   loadMobileSession,
-  saveMobileSession,
 } from './lib/mobileAuth';
 import { syncAiringNotificationsAndWidget } from './lib/mobileSyncWidgets';
 import { MobileWelcomePage } from './pages/MobileWelcomePage';
-import { HomePage } from '../../web/src/pages/HomePage';
-import { TrackerPage } from '../../web/src/pages/TrackerPage';
-import { MediaDetailPage } from '../../web/src/pages/MediaDetailPage';
-import { SearchPage } from '../../web/src/pages/SearchPage';
-import { PopularPage } from '../../web/src/pages/PopularPage';
-import { NewReleasesPage } from '../../web/src/pages/NewReleasesPage';
-import { CalendarPage } from '../../web/src/pages/CalendarPage';
-import { NewsPage } from '../../web/src/pages/NewsPage';
-import { ProfilePage } from '../../web/src/pages/ProfilePage';
-import { SettingsPage } from '../../web/src/pages/SettingsPage';
-import { PrivacyPolicyPage } from '../../web/src/pages/PrivacyPolicyPage';
-
-setDefaultApiBase(API_BASE);
+import { MobileHomePage } from './pages/MobileHomePage';
+import { MobileTrackerPage } from './pages/MobileTrackerPage';
+import { MobileDiscoverPage } from './pages/MobileDiscoverPage';
+import { MobileProfilePage } from './pages/MobileProfilePage';
+import { MobileMediaDetailPage } from './pages/MobileMediaDetailPage';
+import { MobileSettingsPage } from './pages/MobileSettingsPage';
 
 const FALLBACK_APP_VERSION =
   (import.meta.env.VITE_APP_VERSION as string | undefined) || '1.1.0';
@@ -98,13 +89,11 @@ function MobileBackgroundSync() {
 function MobileRoutes() {
   const session = useAuthStore((s) => s.session);
   const setSession = useAuthStore((s) => s.setSession);
-  const [hydrated, setHydrated] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<AppVersionInfo | null>(null);
   const [updateDismissed, setUpdateDismissed] = useState(false);
 
   useEffect(() => {
     setSession(loadMobileSession());
-    setHydrated(true);
 
     const sub = CapApp.addListener('appUrlOpen', async ({ url }) => {
       const exchanged = await exchangeMobileCallbackUrl(url);
@@ -149,11 +138,6 @@ function MobileRoutes() {
     };
   }, [setSession]);
 
-  useEffect(() => {
-    if (!hydrated) return;
-    saveMobileSession(session);
-  }, [hydrated, session]);
-
   return (
     <>
       {session && <MobileBackgroundSync />}
@@ -164,53 +148,36 @@ function MobileRoutes() {
         />
         <Route
           path="/home"
-          element={session ? <HomePage /> : <Navigate to="/" replace />}
+          element={session ? <MobileHomePage /> : <Navigate to="/" replace />}
         />
         <Route
           path="/anime"
           element={
-            session ? <TrackerPage type="ANIME" /> : <Navigate to="/" replace />
+            session ? <MobileTrackerPage type="ANIME" /> : <Navigate to="/" replace />
           }
         />
         <Route
           path="/manga"
           element={
-            session ? <TrackerPage type="MANGA" /> : <Navigate to="/" replace />
+            session ? <MobileTrackerPage type="MANGA" /> : <Navigate to="/" replace />
           }
         />
         <Route
-          path="/media/:type/:id"
-          element={session ? <MediaDetailPage /> : <Navigate to="/" replace />}
-        />
-        <Route
-          path="/search"
-          element={session ? <SearchPage /> : <Navigate to="/" replace />}
-        />
-        <Route
-          path="/popular"
-          element={session ? <PopularPage /> : <Navigate to="/" replace />}
-        />
-        <Route
-          path="/new-releases"
-          element={session ? <NewReleasesPage /> : <Navigate to="/" replace />}
-        />
-        <Route
-          path="/calendar"
-          element={session ? <CalendarPage /> : <Navigate to="/" replace />}
-        />
-        <Route
-          path="/news"
-          element={session ? <NewsPage /> : <Navigate to="/" replace />}
+          path="/discover"
+          element={session ? <MobileDiscoverPage /> : <Navigate to="/" replace />}
         />
         <Route
           path="/profile"
-          element={session ? <ProfilePage /> : <Navigate to="/" replace />}
+          element={session ? <MobileProfilePage /> : <Navigate to="/" replace />}
         />
         <Route
           path="/settings"
-          element={session ? <SettingsPage /> : <Navigate to="/" replace />}
+          element={session ? <MobileSettingsPage /> : <Navigate to="/" replace />}
         />
-        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route
+          path="/media/:type/:id"
+          element={session ? <MobileMediaDetailPage /> : <Navigate to="/" replace />}
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 

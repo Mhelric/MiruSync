@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Navbar, Page, Tabbar, TabbarLink } from 'konsta/react';
-import { BookOpen, Compass, Home, Tv, User } from 'lucide-react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft, BookOpen, Compass, Home, Search, Settings, Tv, User } from 'lucide-react';
+import { useAuthStore } from '@mirusync/core';
+import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
 
 const TABS = [
   { path: '/home', label: 'Home', icon: Home },
@@ -13,31 +14,132 @@ const TABS = [
 
 export function MobileLayout({
   title,
+  showBack = false,
+  hideBottomNav = false,
   children,
 }: {
-  title: string;
+  title?: string;
+  showBack?: boolean;
+  hideBottomNav?: boolean;
   children: ReactNode;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const session = useAuthStore((s) => s.session);
 
   return (
-    <Page className="bg-slate-950 text-slate-50 pb-16">
-      <Navbar title={title} className="bg-slate-900/90" />
+    <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
+      {/* Native-style Glass Top App Bar */}
+      <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
+        <div className="h-14 px-3.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            {showBack ? (
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="h-9 w-9 rounded-xl border border-slate-800 bg-slate-900/80 flex items-center justify-center text-slate-300 active:scale-95 transition-transform cursor-pointer"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            ) : (
+              <NavLink to="/home" className="shrink-0 flex items-center gap-2">
+                <MiruSyncLogo className="h-8 w-8 shadow-md shadow-sky-500/15" />
+              </NavLink>
+            )}
+            <span className="text-base font-bold tracking-tight truncate">
+              {title ? (
+                title
+              ) : (
+                <>
+                  Miru<span className="text-sky-400">Sync</span>
+                </>
+              )}
+            </span>
+          </div>
 
-      <div className="pb-20">{children}</div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => navigate('/discover?tab=search')}
+              aria-label="Search"
+              className="h-9 w-9 rounded-xl border border-slate-800/90 bg-slate-900/75 flex items-center justify-center text-slate-300 active:scale-95 transition-transform cursor-pointer"
+            >
+              <Search className="h-4 w-4" />
+            </button>
 
-      <Tabbar labels icons className="fixed bottom-0 left-0 right-0 z-30 bg-slate-900/95 border-t border-slate-800">
-        {TABS.map(({ path, label, icon: Icon }) => (
-          <TabbarLink
-            key={path}
-            active={location.pathname === path}
-            onClick={() => navigate(path)}
-            icon={<Icon className="h-5 w-5" />}
-            label={label}
-          />
-        ))}
-      </Tabbar>
-    </Page>
+            <NavLink
+              to="/profile"
+              className="flex items-center gap-1.5 rounded-full border border-slate-800/90 bg-slate-900/75 pl-1 pr-2 py-1"
+            >
+              {session?.user.avatarUrl ? (
+                <img
+                  src={session.user.avatarUrl}
+                  alt={session.user.name}
+                  className="h-6 w-6 rounded-full object-cover border border-slate-700"
+                />
+              ) : (
+                <div className="h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center text-[11px] font-bold text-slate-300">
+                  {session?.user.name.slice(0, 1).toUpperCase() || 'M'}
+                </div>
+              )}
+              {session?.provider === 'mal' ? (
+                <MalIcon className="h-3.5 w-3.5 rounded-[3px]" />
+              ) : (
+                <AniListIcon className="h-3.5 w-3.5 rounded-[3px]" />
+              )}
+            </NavLink>
+
+            <NavLink
+              to="/settings"
+              aria-label="Settings"
+              className={({ isActive }) =>
+                `h-9 w-9 rounded-xl border flex items-center justify-center transition-colors ${
+                  isActive
+                    ? 'border-sky-500/40 bg-sky-500/15 text-sky-400'
+                    : 'border-slate-800/90 bg-slate-900/75 text-slate-300'
+                }`
+              }
+            >
+              <Settings className="h-4 w-4" />
+            </NavLink>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Scroll Area */}
+      <main className={`flex-1 px-3.5 pt-4 ${hideBottomNav ? 'pb-8' : 'pb-28'} min-w-0`}>
+        {children}
+      </main>
+
+      {/* Floating Glassmorphic Mobile App Dock */}
+      {!hideBottomNav && (
+        <nav
+          aria-label="Mobile navigation"
+          className="fixed bottom-3 left-3 right-3 z-40 rounded-2xl border border-white/10 bg-slate-900/90 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.65)] px-1.5 py-1.5 mb-[env(safe-area-inset-bottom)]"
+        >
+          <div className="grid grid-cols-5 gap-1">
+            {TABS.map(({ path, label, icon: Icon }) => {
+              const active = location.pathname === path;
+              return (
+                <button
+                  key={path}
+                  type="button"
+                  onClick={() => navigate(path)}
+                  className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition-all cursor-pointer ${
+                    active
+                      ? 'bg-sky-500/15 text-sky-400 font-semibold'
+                      : 'text-slate-400 active:scale-95'
+                  }`}
+                >
+                  <Icon className={`h-4 w-4 ${active ? 'scale-110' : ''} transition-transform`} />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+    </div>
   );
 }
