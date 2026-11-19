@@ -226,6 +226,11 @@ html[data-accent]:not([data-accent="sky"]) .border-sky-500\/40 {
   50% { transform: scale(1.1); opacity: 1; }
 }
 
+@keyframes rays-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.16); opacity: 1; }
+}
+
 @keyframes cloud-drift {
   0%, 100% { transform: translateX(0px); }
   50% { transform: translateX(18px); }
@@ -259,6 +264,10 @@ html[data-accent]:not([data-accent="sky"]) .border-sky-500\/40 {
 
 .animate-sun-pulse {
   animation: sun-pulse 4.5s ease-in-out infinite;
+}
+
+.animate-rays-pulse {
+  animation: rays-pulse 3.6s ease-in-out infinite;
 }
 
 .animate-cloud-drift {

@@ -34,8 +34,9 @@ function Cloud({ x, y, scale = 1, fill, opacity = 1, d = 0 }: { x: number; y: nu
 
 export function SkyBackdrop({ phase }: { phase: TimeOfDayPhase }) {
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-64 max-w-[70%]">
-      <svg viewBox="0 0 220 110" preserveAspectRatio="xMaxYMid slice" className="h-full w-full">
+    <>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-64 max-w-[70%]">
+        <svg viewBox="0 0 220 110" preserveAspectRatio="xMaxYMid slice" className="h-full w-full">
         {phase === 'day' && (
           <>
             <g className="animate-sun-spin" style={BOX}>
@@ -94,8 +95,7 @@ export function SkyBackdrop({ phase }: { phase: TimeOfDayPhase }) {
                 <circle cx="170" cy="82" r="26" />
               </clipPath>
             </defs>
-            <g className="animate-sun-pulse" style={BOX}>
-              <circle cx="170" cy="82" r="26" fill="#fb923c" />
+            <g className="animate-rays-pulse" style={{ transformOrigin: '170px 82px' }}>
               {[-90, -45, 0, 45, 90].map((a) => (
                 <line
                   key={a}
@@ -109,13 +109,13 @@ export function SkyBackdrop({ phase }: { phase: TimeOfDayPhase }) {
                   transform={`rotate(${a} 170 82)`}
                 />
               ))}
-              <g clipPath="url(#dusk-sun)" fill="#7c2d56" opacity="0.55">
-                <rect x="140" y="84" width="60" height="2.5" />
-                <rect x="140" y="91" width="60" height="3.5" />
-                <rect x="140" y="99" width="60" height="5" />
-              </g>
             </g>
-            <path d="M0 110 L0 96 Q55 78 110 94 T220 90 L220 110 Z" fill="#1e1b4b" opacity="0.4" />
+            <circle cx="170" cy="82" r="26" fill="#fb923c" />
+            <g clipPath="url(#dusk-sun)" fill="#7c2d56" opacity="0.55">
+              <rect x="140" y="84" width="60" height="2.5" />
+              <rect x="140" y="91" width="60" height="3.5" />
+              <rect x="140" y="99" width="60" height="5" />
+            </g>
             <g stroke="#fed7aa" strokeWidth="2" strokeLinecap="round" opacity="0.5">
               <line className="animate-cloud-drift" style={BOX} x1="96" y1="30" x2="146" y2="30" />
               <line className="animate-cloud-drift" style={delay(-4)} x1="122" y1="42" x2="158" y2="42" />
@@ -181,6 +181,21 @@ export function SkyBackdrop({ phase }: { phase: TimeOfDayPhase }) {
           </>
         )}
       </svg>
-    </div>
+      </div>
+      {phase === 'dusk' && (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 800 110"
+          preserveAspectRatio="none"
+          className="pointer-events-none absolute inset-0 h-full w-full"
+        >
+          <path
+            d="M0 110 L0 94 Q130 76 280 92 T560 88 T800 90 L800 110 Z"
+            fill="#1e1b4b"
+            opacity="0.4"
+          />
+        </svg>
+      )}
+    </>
   );
 }
