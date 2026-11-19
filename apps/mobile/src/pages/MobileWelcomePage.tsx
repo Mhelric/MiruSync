@@ -9,12 +9,21 @@ const SCENES = [
   { title: 'Frieren', gifUrl: '/scenes/frieren.gif' },
   { title: 'One Piece', gifUrl: '/scenes/onepiece.gif' },
   { title: 'Vinland Saga', gifUrl: '/scenes/vinland.gif' },
-  { title: 'Naruto', gifUrl: '/scenes/naruto.gif' },
   { title: 'Attack on Titan', gifUrl: '/scenes/aot.gif' },
   { title: 'Jujutsu Kaisen', gifUrl: '/scenes/jjk.gif' },
   { title: 'Demon Slayer', gifUrl: '/scenes/demonslayer.gif' },
   { title: 'My Hero Academia', gifUrl: '/scenes/mha.gif' },
   { title: 'Fullmetal Alchemist', gifUrl: '/scenes/fmab.gif' },
+  { title: 'Deku', gifUrl: '/scenes/deku.jpg' },
+  { title: 'KonoSuba', gifUrl: '/scenes/konosuba.jpg' },
+  { title: 'Kimi ni Todoke', gifUrl: '/scenes/kiminitodoke.jpg' },
+  { title: 'Haikyu!!', gifUrl: '/scenes/haikyuu.jpg' },
+  { title: 'Dandadan', gifUrl: '/scenes/dandadan.jpg' },
+  { title: 'Gurren Lagann', gifUrl: '/scenes/gurrenlagann.jpg' },
+  { title: 'Dr. Stone', gifUrl: '/scenes/drstone.png' },
+  { title: 'Solo Leveling', gifUrl: '/scenes/scene8.jpg' },
+  { title: 'Black Clover', gifUrl: '/scenes/blackclover.jpg' },
+  { title: 'Naruto & Sasuke', gifUrl: '/scenes/kurama_susanoo.jpg' },
 ];
 
 export function MobileWelcomePage() {
@@ -95,7 +104,7 @@ export function MobileWelcomePage() {
       </div>
 
       {/* True Translucent Glassmorphism Sign-In Card */}
-      <div className="relative z-10 w-full max-w-sm rounded-3xl overflow-hidden bg-slate-950/35 backdrop-blur-md border border-white/25 p-7 shadow-2xl space-y-5 text-white">
+      <div className="relative z-10 w-full max-w-sm rounded-3xl overflow-hidden bg-slate-950/35 backdrop-blur-[2px] border border-white/25 p-7 shadow-2xl space-y-5 text-white">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <MiruSyncLogo className="h-11 w-11 shrink-0 animate-float-idle" />
