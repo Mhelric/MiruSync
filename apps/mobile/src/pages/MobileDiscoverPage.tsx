@@ -243,15 +243,38 @@ export function MobileDiscoverPage() {
   }
 
   const calendarDays = useMemo(() => {
-    const groups = new Map<string, AiringScheduleItem[]>();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayMs = todayStart.getTime();
+
+    const groups = new Map<
+      number,
+      { label: string; items: AiringScheduleItem[] }
+    >();
+
     for (const item of schedule?.items ?? []) {
       const d = new Date(item.airingAt * 1000);
-      const key = d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-      const existing = groups.get(key) ?? [];
-      existing.push(item);
-      groups.set(key, existing);
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      const isToday = dayStart === todayMs;
+      const dateStr = d.toLocaleDateString([], {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      });
+      const label = isToday ? `Today · ${dateStr}` : dateStr;
+      const entry = groups.get(dayStart) ?? { label, items: [] };
+      entry.items.push(item);
+      groups.set(dayStart, entry);
     }
-    return Array.from(groups.entries());
+
+    return Array.from(groups.entries())
+      .sort(([aMs], [bMs]) => {
+        const aPast = aMs < todayMs;
+        const bPast = bMs < todayMs;
+        if (aPast !== bPast) return aPast ? 1 : -1;
+        return aMs - bMs;
+      })
+      .map(([, val]): [string, AiringScheduleItem[]] => [val.label, val.items]);
   }, [schedule]);
 
   const activeDay =

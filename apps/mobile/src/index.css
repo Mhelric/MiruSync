@@ -20,6 +20,15 @@
   100% { transform: scale(1); }
 }
 
+@keyframes aurora-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(14px, -10px, 0) scale(1.12); }
+}
+
+.animate-aurora {
+  animation: aurora-drift 9s ease-in-out infinite;
+}
+
 .animate-float-idle {
   animation: float-idle 3.2s ease-in-out infinite;
 }
