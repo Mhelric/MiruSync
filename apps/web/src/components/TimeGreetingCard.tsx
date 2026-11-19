@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Sparkles, Tv } from 'lucide-react';
 import { getTimeOfDayInfo, type TimeOfDayPhase } from '@mirusync/core';
+import { SkyBackdrop } from './SkyBackdrop';
 
 interface TimeGreetingCardProps {
   username?: string;
@@ -74,126 +75,6 @@ const THEME_STYLES: Record<
   },
 };
 
-const flat = { transformBox: 'fill-box', transformOrigin: 'center' } as const;
-
-function Dot({
-  cx,
-  cy,
-  r = 1.6,
-  fill = '#ffffff',
-  delay = 0,
-}: {
-  cx: number;
-  cy: number;
-  r?: number;
-  fill?: string;
-  delay?: number;
-}) {
-  return (
-    <circle
-      cx={cx}
-      cy={cy}
-      r={r}
-      fill={fill}
-      className="animate-star-twinkle"
-      style={{ ...flat, animationDelay: `-${delay}s` }}
-    />
-  );
-}
-
-function Cloud({
-  x,
-  y,
-  w = 46,
-  fill,
-  opacity = 0.85,
-  delay = 0,
-}: {
-  x: number;
-  y: number;
-  w?: number;
-  fill: string;
-  opacity?: number;
-  delay?: number;
-}) {
-  return (
-    <rect
-      x={x}
-      y={y}
-      width={w}
-      height={8}
-      rx={4}
-      fill={fill}
-      opacity={opacity}
-      className="animate-cloud-drift"
-      style={{ animationDelay: `-${delay}s` }}
-    />
-  );
-}
-
-function SkyBackdrop({ phase }: { phase: TimeOfDayPhase }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 400 120"
-      preserveAspectRatio="xMaxYMid slice"
-      className="pointer-events-none absolute inset-0 h-full w-full"
-    >
-      {phase === 'day' && (
-        <>
-          <circle cx={348} cy={34} r={22} fill="none" stroke="#f59e0b" strokeWidth={1.5} opacity={0.5} className="animate-sun-pulse" style={flat} />
-          <circle cx={348} cy={34} r={14} fill="#f59e0b" />
-          <Cloud x={262} y={24} fill="#ffffff" />
-          <Cloud x={300} y={84} w={36} fill="#ffffff" opacity={0.7} delay={4} />
-        </>
-      )}
-
-      {phase === 'dawn' && (
-        <>
-          <path d="M296 120 A32 32 0 0 1 360 120 Z" fill="#fde68a" className="animate-sun-pulse" style={flat} />
-          <Cloud x={268} y={30} fill="#fbcfe8" opacity={0.6} />
-          <Cloud x={326} y={52} w={34} fill="#fbcfe8" opacity={0.5} delay={4} />
-          <Dot cx={250} cy={24} fill="#fef3c7" delay={1} />
-          <Dot cx={380} cy={26} fill="#fef3c7" delay={2.4} />
-        </>
-      )}
-
-      {phase === 'dusk' && (
-        <>
-          <path d="M300 120 A30 30 0 0 1 360 120 Z" fill="#fbbf24" className="animate-sun-pulse" style={flat} />
-          <Cloud x={262} y={30} fill="#fed7aa" opacity={0.5} />
-          <Cloud x={330} y={54} w={32} fill="#fed7aa" opacity={0.4} delay={4} />
-          <path d="M0 120 V104 Q100 90 200 102 T400 98 V120 Z" fill="#000000" opacity={0.18} />
-        </>
-      )}
-
-      {phase === 'night' && (
-        <>
-          <path
-            d="M350 16 a20 20 0 1 0 14 34 a16 16 0 1 1 -14 -34 Z"
-            fill="#fef9c3"
-            className="animate-moon-float"
-          />
-          <Dot cx={290} cy={24} delay={0} />
-          <Dot cx={318} cy={64} r={1.2} fill="#bae6fd" delay={1.1} />
-          <Dot cx={268} cy={78} r={1.2} delay={2.2} />
-          <Dot cx={384} cy={80} r={1.4} fill="#bae6fd" delay={0.6} />
-        </>
-      )}
-
-      {phase === 'midnight' && (
-        <>
-          <circle cx={352} cy={34} r={14} fill="#e2e8f0" className="animate-moon-float" />
-          <circle cx={352} cy={34} r={22} fill="none" stroke="#a5b4fc" strokeWidth={1} opacity={0.4} className="animate-sun-pulse" style={flat} />
-          <Dot cx={286} cy={22} fill="#c7d2fe" delay={0} />
-          <Dot cx={312} cy={70} r={1.2} fill="#a5f3fc" delay={1.8} />
-          <Dot cx={270} cy={88} r={1.2} fill="#c7d2fe" delay={3.1} />
-          <Dot cx={382} cy={84} r={1.4} fill="#c7d2fe" delay={0.9} />
-        </>
-      )}
-    </svg>
-  );
-}
 export function TimeGreetingCard({
   username,
   animeCount,
@@ -263,7 +144,7 @@ export function TimeGreetingCard({
           >
             <Tv className="h-4 w-4 animate-float-idle" style={{ color: theme.accentColor }} />
             <span className="text-base font-bold font-mono" style={{ color: theme.accentColor }}>
-              {animeCount ?? 'â€”'}
+              {animeCount ?? 'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â'}
             </span>
             <span className="text-xs font-medium" style={{ color: theme.textColor }}>
               Anime
@@ -282,7 +163,7 @@ export function TimeGreetingCard({
               style={{ color: theme.accentColor, animationDelay: '-1.5s' }}
             />
             <span className="text-base font-bold font-mono" style={{ color: theme.accentColor }}>
-              {mangaCount ?? 'â€”'}
+              {mangaCount ?? 'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â'}
             </span>
             <span className="text-xs font-medium" style={{ color: theme.textColor }}>
               Manga
