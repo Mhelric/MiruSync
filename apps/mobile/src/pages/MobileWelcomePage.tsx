@@ -26,25 +26,34 @@ const SCENES = [
   { title: 'Solo Leveling', gifUrl: '/scenes/solo-leveling-statue-smile-solo-leveling.gif', durationMs: 3100 },
 ];
 
+function pickRandomIndex(exclude?: number): number {
+  if (SCENES.length <= 1) return 0;
+  let next = Math.floor(Math.random() * SCENES.length);
+  if (exclude !== undefined && next === exclude) {
+    next = (next + 1) % SCENES.length;
+  }
+  return next;
+}
+
 export function MobileWelcomePage() {
-  const [sceneIdx, setSceneIdx] = useState(() => Math.floor(Math.random() * SCENES.length));
+  const [sceneIdx, setSceneIdx] = useState(() => pickRandomIndex());
+  const [nextIdx, setNextIdx] = useState(() => pickRandomIndex(sceneIdx));
   const [playCount, setPlayCount] = useState(0);
   const [connecting, setConnecting] = useState<'mal' | 'anilist' | null>(null);
   const { updateInfo } = useUpdateState();
 
   useEffect(() => {
+    const preload = new Image();
+    preload.src = SCENES[nextIdx].gifUrl;
+
     const duration = SCENES[sceneIdx]?.durationMs ?? 3000;
     const timer = setTimeout(() => {
-      setSceneIdx((prev) => {
-        if (SCENES.length <= 1) return 0;
-        let next = Math.floor(Math.random() * SCENES.length);
-        if (next === prev) next = (prev + 1) % SCENES.length;
-        return next;
-      });
+      setSceneIdx(nextIdx);
+      setNextIdx(pickRandomIndex(nextIdx));
       setPlayCount((c) => c + 1);
     }, duration);
     return () => clearTimeout(timer);
-  }, [sceneIdx, playCount]);
+  }, [sceneIdx, nextIdx, playCount]);
 
   useEffect(() => {
     const sub = Browser.addListener('browserFinished', () => {

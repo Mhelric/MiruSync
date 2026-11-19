@@ -15,55 +15,38 @@ interface SceneSlide {
   id: string;
   title: string;
   gifUrl: string;
+  durationMs: number;
 }
 
 const SCENES: SceneSlide[] = [
-  {
-    id: 'frieren',
-    title: "Frieren: Beyond Journey's End",
-    gifUrl: '/scenes/frieren.gif',
-  },
-  {
-    id: 'onepiece',
-    title: 'One Piece',
-    gifUrl: '/scenes/onepiece.gif',
-  },
-  {
-    id: 'vinland',
-    title: 'Vinland Saga',
-    gifUrl: '/scenes/vinland.gif',
-  },
-  {
-    id: 'naruto',
-    title: 'Naruto',
-    gifUrl: '/scenes/naruto.gif',
-  },
-  {
-    id: 'aot',
-    title: 'Attack on Titan',
-    gifUrl: '/scenes/aot.gif',
-  },
-  {
-    id: 'jjk',
-    title: 'Jujutsu Kaisen',
-    gifUrl: '/scenes/jjk.gif',
-  },
-  {
-    id: 'demonslayer',
-    title: 'Demon Slayer',
-    gifUrl: '/scenes/demonslayer.gif',
-  },
-  {
-    id: 'fmab',
-    title: 'Fullmetal Alchemist: Brotherhood',
-    gifUrl: '/scenes/fmab.gif',
-  },
-  {
-    id: 'sololeveling',
-    title: 'Solo Leveling',
-    gifUrl: '/scenes/sololeveling.gif',
-  },
+  { id: 'frieren', title: "Frieren: Beyond Journey's End", gifUrl: '/scenes/frieren.gif', durationMs: 2200 },
+  { id: 'onepiece', title: 'One Piece', gifUrl: '/scenes/onepiece.gif', durationMs: 4600 },
+  { id: 'vinland', title: 'Vinland Saga', gifUrl: '/scenes/vinland.gif', durationMs: 1400 },
+  { id: 'aot', title: 'Attack on Titan', gifUrl: '/scenes/aot.gif', durationMs: 5500 },
+  { id: 'jjk', title: 'Jujutsu Kaisen', gifUrl: '/scenes/jjk.gif', durationMs: 7260 },
+  { id: 'demonslayer', title: 'Demon Slayer', gifUrl: '/scenes/demonslayer.gif', durationMs: 3200 },
+  { id: 'mha', title: 'My Hero Academia', gifUrl: '/scenes/mha.gif', durationMs: 1800 },
+  { id: 'fmab', title: 'Fullmetal Alchemist: Brotherhood', gifUrl: '/scenes/fmab.gif', durationMs: 2500 },
+  { id: 'blackclover', title: 'Black Clover', gifUrl: '/scenes/asta-swordofthewizardking.gif', durationMs: 4010 },
+  { id: 'dandadan', title: 'Dandadan', gifUrl: '/scenes/dandadan.gif', durationMs: 5600 },
+  { id: 'deku', title: 'Deku', gifUrl: '/scenes/deku-mha.gif', durationMs: 1560 },
+  { id: 'drstone', title: 'Dr. Stone', gifUrl: '/scenes/dr-stone-tsukasa.gif', durationMs: 3810 },
+  { id: 'gurrenlagann', title: 'Gurren Lagann', gifUrl: '/scenes/gurren-lagann-simon.gif', durationMs: 1900 },
+  { id: 'haikyuu', title: 'Haikyu!!', gifUrl: '/scenes/haikyuu-anime.gif', durationMs: 2000 },
+  { id: 'kiminitodoke', title: 'Kimi ni Todoke', gifUrl: '/scenes/hold-close-comfurt-anime.gif', durationMs: 1760 },
+  { id: 'konosuba', title: 'KonoSuba', gifUrl: '/scenes/megumin-thumbs-up.gif', durationMs: 3000 },
+  { id: 'naruto', title: 'Naruto & Sasuke', gifUrl: '/scenes/naruto-sasuke.gif', durationMs: 1600 },
+  { id: 'sololeveling', title: 'Solo Leveling', gifUrl: '/scenes/solo-leveling-statue-smile-solo-leveling.gif', durationMs: 3100 },
 ];
+
+function pickRandomIndex(exclude?: number): number {
+  if (SCENES.length <= 1) return 0;
+  let next = Math.floor(Math.random() * SCENES.length);
+  if (exclude !== undefined && next === exclude) {
+    next = (next + 1) % SCENES.length;
+  }
+  return next;
+}
 
 const APK_DOWNLOAD_URL =
   'https://github.com/Mhelric/MiruSync/releases/latest/download/MiruSync.apk';
@@ -72,15 +55,23 @@ export function WelcomePage() {
   const [searchParams] = useSearchParams();
   const authError = searchParams.get('auth_error');
 
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(() => pickRandomIndex());
+  const [nextIndex, setNextIndex] = useState(() => pickRandomIndex(activeIndex));
+  const [playCount, setPlayCount] = useState(0);
   const [connectingProvider, setConnectingProvider] = useState<'mal' | 'anilist' | null>(null);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % SCENES.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
+    const preload = new Image();
+    preload.src = SCENES[nextIndex].gifUrl;
+
+    const duration = SCENES[activeIndex]?.durationMs ?? 3000;
+    const timer = setTimeout(() => {
+      setActiveIndex(nextIndex);
+      setNextIndex(pickRandomIndex(nextIndex));
+      setPlayCount((c) => c + 1);
+    }, duration);
+    return () => clearTimeout(timer);
+  }, [activeIndex, nextIndex, playCount]);
 
   function handleOAuthConnect(provider: 'mal' | 'anilist') {
     setConnectingProvider(provider);
@@ -94,20 +85,12 @@ export function WelcomePage() {
     <main className="relative min-h-screen flex items-center justify-center bg-slate-950 text-slate-50 p-6 overflow-hidden">
       {/* Animated 4-Anime Scene GIF Background Slideshow */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
-        {SCENES.map((scene, idx) => (
-          <div
-            key={scene.id}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              idx === activeIndex ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <img
-              src={scene.gifUrl}
-              alt={scene.title}
-              className="h-full w-full object-cover scale-105"
-            />
-          </div>
-        ))}
+        <img
+          key={`${SCENES[activeIndex].gifUrl}-${playCount}`}
+          src={SCENES[activeIndex].gifUrl}
+          alt={SCENES[activeIndex].title}
+          className="absolute inset-0 h-full w-full object-cover scale-105"
+        />
         {/* Vignette & contrast gradient */}
         <div
           className="absolute inset-0"
@@ -120,7 +103,7 @@ export function WelcomePage() {
 
       <div className="relative z-10 max-w-md w-full flex flex-col gap-4">
         {/* Glassmorphism Sign-In Card */}
-        <div className="w-full rounded-3xl overflow-hidden backdrop-blur-md bg-slate-900/65 border border-white/15 p-8 shadow-2xl transition-colors duration-500">
+        <div className="w-full rounded-3xl overflow-hidden backdrop-blur-[2px] bg-slate-900/65 border border-white/15 p-8 shadow-2xl transition-colors duration-500">
           <div className="flex items-center gap-3 mb-5">
             <MiruSyncLogo className="h-10 w-10 shadow-lg shadow-sky-500/20" />
             <div className="text-xl font-bold tracking-tight text-white">
