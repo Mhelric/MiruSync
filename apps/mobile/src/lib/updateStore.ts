@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { useSyncExternalStore } from 'react';
 
 export interface AppVersionInfo {
   version: string;
@@ -7,22 +7,49 @@ export interface AppVersionInfo {
   notes?: string[];
 }
 
-interface UpdateStore {
+interface UpdateState {
   updateInfo: AppVersionInfo | null;
   modalOpen: boolean;
-  setUpdateAvailable: (info: AppVersionInfo) => void;
-  openModal: () => void;
-  closeModal: () => void;
 }
 
-export const useUpdateStore = create<UpdateStore>((set, get) => ({
+let state: UpdateState = {
   updateInfo: null,
   modalOpen: false,
-  setUpdateAvailable: (info) => {
-    const prev = get().updateInfo;
-    if (prev?.version === info.version) return;
-    set({ updateInfo: info, modalOpen: true });
-  },
-  openModal: () => set({ modalOpen: true }),
-  closeModal: () => set({ modalOpen: false }),
-}));
+};
+
+const listeners = new Set<() => void>();
+
+function emit() {
+  for (const listener of listeners) listener();
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function getSnapshot(): UpdateState {
+  return state;
+}
+
+export function setUpdateAvailable(info: AppVersionInfo): void {
+  if (state.updateInfo?.version === info.version) return;
+  state = { updateInfo: info, modalOpen: true };
+  emit();
+}
+
+export function openUpdateModal(): void {
+  if (state.modalOpen) return;
+  state = { ...state, modalOpen: true };
+  emit();
+}
+
+export function closeUpdateModal(): void {
+  if (!state.modalOpen) return;
+  state = { ...state, modalOpen: false };
+  emit();
+}
+
+export function useUpdateState(): UpdateState {
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}

@@ -16,7 +16,12 @@ import {
   loadMobileSession,
 } from './lib/mobileAuth';
 import { syncAiringNotificationsAndWidget } from './lib/mobileSyncWidgets';
-import { useUpdateStore, type AppVersionInfo } from './lib/updateStore';
+import {
+  closeUpdateModal,
+  setUpdateAvailable,
+  useUpdateState,
+  type AppVersionInfo,
+} from './lib/updateStore';
 import { MobileWelcomePage } from './pages/MobileWelcomePage';
 import { MobileHomePage } from './pages/MobileHomePage';
 import { MobileTrackerPage } from './pages/MobileTrackerPage';
@@ -83,10 +88,7 @@ function MobileBackgroundSync() {
 function MobileRoutes() {
   const session = useAuthStore((s) => s.session);
   const setSession = useAuthStore((s) => s.setSession);
-  const updateInfo = useUpdateStore((s) => s.updateInfo);
-  const modalOpen = useUpdateStore((s) => s.modalOpen);
-  const setUpdateAvailable = useUpdateStore((s) => s.setUpdateAvailable);
-  const closeModal = useUpdateStore((s) => s.closeModal);
+  const { updateInfo, modalOpen } = useUpdateState();
 
   useEffect(() => {
     setSession(loadMobileSession());
@@ -144,7 +146,7 @@ function MobileRoutes() {
       void sub.then((handle) => handle.remove());
       void stateSub.then((handle) => handle.remove());
     };
-  }, [setSession, setUpdateAvailable]);
+  }, [setSession]);
 
   return (
     <>
@@ -192,7 +194,7 @@ function MobileRoutes() {
       {updateInfo && modalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-5"
-          onClick={closeModal}
+          onClick={closeUpdateModal}
         >
           <div
             className="w-full max-w-sm rounded-3xl border border-white/15 bg-slate-900/95 p-6 shadow-2xl space-y-4 text-slate-100"
@@ -214,7 +216,7 @@ function MobileRoutes() {
               </div>
               <button
                 type="button"
-                onClick={closeModal}
+                onClick={closeUpdateModal}
                 className="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
                 aria-label="Close update prompt"
               >
@@ -248,7 +250,7 @@ function MobileRoutes() {
               </button>
               <button
                 type="button"
-                onClick={closeModal}
+                onClick={closeUpdateModal}
                 className="w-full rounded-xl border border-slate-800 bg-slate-950/60 hover:bg-slate-800 py-2.5 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
               >
                 Later

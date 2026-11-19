@@ -3,7 +3,7 @@ import { Browser } from '@capacitor/browser';
 import { Download } from 'lucide-react';
 import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
 import { startMobileOAuth } from '../lib/mobileAuth';
-import { useUpdateStore } from '../lib/updateStore';
+import { openUpdateModal, useUpdateState } from '../lib/updateStore';
 
 const SCENES = [
   { title: 'Frieren', gifUrl: '/scenes/frieren.gif' },
@@ -20,8 +20,7 @@ const SCENES = [
 export function MobileWelcomePage() {
   const [sceneIdx, setSceneIdx] = useState(0);
   const [connecting, setConnecting] = useState<'mal' | 'anilist' | null>(null);
-  const updateInfo = useUpdateStore((s) => s.updateInfo);
-  const openUpdateModal = useUpdateStore((s) => s.openModal);
+  const { updateInfo } = useUpdateState();
 
   useEffect(() => {
     const timer = setInterval(() => {

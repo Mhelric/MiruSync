@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Compass, Download, Home, Search, Settings, Tv, User } from 'lucide-react';
 import { useAuthStore } from '@mirusync/core';
 import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
-import { useUpdateStore } from '../lib/updateStore';
+import { openUpdateModal, useUpdateState } from '../lib/updateStore';
 
 const TABS = [
   { path: '/home', label: 'Home', icon: Home },
@@ -27,8 +27,7 @@ export function MobileLayout({
   const location = useLocation();
   const navigate = useNavigate();
   const session = useAuthStore((s) => s.session);
-  const updateInfo = useUpdateStore((s) => s.updateInfo);
-  const openUpdateModal = useUpdateStore((s) => s.openModal);
+  const { updateInfo } = useUpdateState();
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
