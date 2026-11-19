@@ -4,15 +4,15 @@ import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
 import { startMobileOAuth } from '../lib/mobileAuth';
 
 const SCENES = [
-  { title: 'Frieren', image: '/scenes/frieren.gif' },
-  { title: 'One Piece', image: '/scenes/onepiece.gif' },
-  { title: 'Vinland Saga', image: '/scenes/vinland.gif' },
-  { title: 'Naruto', image: '/scenes/naruto.gif' },
-  { title: 'Attack on Titan', image: '/scenes/aot.gif' },
-  { title: 'Jujutsu Kaisen', image: '/scenes/jjk.gif' },
-  { title: 'Demon Slayer', image: '/scenes/demonslayer.gif' },
-  { title: 'Solo Leveling', image: '/scenes/sololeveling.gif' },
-  { title: 'Fullmetal Alchemist', image: '/scenes/fmab.gif' },
+  { title: 'Frieren', gifUrl: '/scenes/frieren.gif' },
+  { title: 'One Piece', gifUrl: '/scenes/onepiece.gif' },
+  { title: 'Vinland Saga', gifUrl: '/scenes/vinland.gif' },
+  { title: 'Naruto', gifUrl: '/scenes/naruto.gif' },
+  { title: 'Attack on Titan', gifUrl: '/scenes/aot.gif' },
+  { title: 'Jujutsu Kaisen', gifUrl: '/scenes/jjk.gif' },
+  { title: 'Demon Slayer', gifUrl: '/scenes/demonslayer.gif' },
+  { title: 'Solo Leveling', gifUrl: '/scenes/sololeveling.gif' },
+  { title: 'Fullmetal Alchemist', gifUrl: '/scenes/fmab.gif' },
 ];
 
 export function MobileWelcomePage() {
@@ -47,24 +47,29 @@ export function MobileWelcomePage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-50 flex items-center justify-center p-4">
-      {/* Blurred Animated Anime Scenes Background */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-50 flex flex-col justify-between pb-[max(env(safe-area-inset-bottom),1.5rem)]">
+      {/* Crisp High-Res Cinematic Anime Scene Showcase */}
+      <div className="relative w-full h-[46vh] min-h-[300px] overflow-hidden bg-slate-950 shrink-0" aria-hidden="true">
         {SCENES.map((scene, idx) => (
           <img
             key={scene.title}
-            src={scene.image}
-            alt=""
-            className={`absolute inset-0 h-full w-full object-cover blur-sm scale-105 transition-opacity duration-1000 ${
-              idx === sceneIdx ? 'opacity-45 animate-ken-burns' : 'opacity-0'
+            src={scene.gifUrl}
+            alt={scene.title}
+            className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ${
+              idx === sceneIdx ? 'opacity-100' : 'opacity-0'
             }`}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/65 to-slate-950/75" />
+        {/* Subtle top safe-area & smooth bottom fade into slate-950 */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-transparent to-slate-950" />
+        <div className="absolute bottom-14 left-4 z-10 rounded-full border border-white/15 bg-slate-950/60 backdrop-blur-md px-3 py-1 text-[11px] font-medium text-slate-200">
+          {SCENES[sceneIdx]?.title}
+        </div>
       </div>
 
       {/* Glassmorphism Sign-In Card */}
-      <div className="relative z-10 w-full max-w-sm rounded-3xl backdrop-blur-2xl bg-slate-900/45 border border-white/15 p-7 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.8)] space-y-6">
+      <div className="relative z-10 -mt-12 px-4 flex-1 flex items-start justify-center">
+        <div className="w-full max-w-sm rounded-3xl overflow-hidden backdrop-blur-md bg-slate-900/75 border border-white/15 p-6 shadow-2xl space-y-5">
         <div className="flex items-center gap-3">
           <MiruSyncLogo className="h-11 w-11 shrink-0 drop-shadow-lg" />
           <span className="text-xl font-bold tracking-tight text-white">
@@ -101,6 +106,7 @@ export function MobileWelcomePage() {
             <AniListIcon className="h-5 w-5 rounded" />
             Continue with AniList
           </button>
+        </div>
         </div>
       </div>
 
