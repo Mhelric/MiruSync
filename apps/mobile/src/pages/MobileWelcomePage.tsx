@@ -55,7 +55,7 @@ export function MobileWelcomePage() {
         <button
           type="button"
           onClick={openUpdateModal}
-          className="fixed top-[max(env(safe-area-inset-top),0.75rem)] left-4 right-4 z-40 rounded-2xl border border-sky-400/40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-3.5 py-2 flex items-center justify-between gap-2 text-xs text-sky-700 shadow-xl cursor-pointer"
+          className="fixed top-[max(env(safe-area-inset-top),0.75rem)] left-4 right-4 z-40 rounded-2xl border border-sky-400/40 bg-slate-900/80 backdrop-blur-xl px-3.5 py-2 flex items-center justify-between gap-2 text-xs text-sky-300 shadow-xl cursor-pointer"
         >
           <span className="inline-flex items-center gap-1.5 font-medium truncate">
             <Download className="h-3.5 w-3.5 shrink-0 animate-float-idle" />
@@ -84,30 +84,30 @@ export function MobileWelcomePage() {
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(circle at center, rgba(2,6,23,0.12) 0%, rgba(2,6,23,0.45) 75%, rgba(2,6,23,0.68) 100%)',
+              'radial-gradient(circle at center, rgba(2,6,23,0.12) 0%, rgba(2,6,23,0.42) 75%, rgba(2,6,23,0.65) 100%)',
           }}
         />
       </div>
 
-      {/* White-Frosted Glassmorphism Sign-In Card (lets the crisp anime scene shine through) */}
-      <div className="relative z-10 w-full max-w-sm rounded-3xl overflow-hidden bg-white/75 backdrop-blur-xl border border-white/60 p-7 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.45)] space-y-5 text-slate-900">
+      {/* True Translucent Glassmorphism Sign-In Card */}
+      <div className="relative z-10 w-full max-w-sm rounded-3xl overflow-hidden bg-slate-950/35 backdrop-blur-md border border-white/25 p-7 shadow-2xl space-y-5 text-white">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <MiruSyncLogo className="h-11 w-11 shrink-0 drop-shadow-md animate-float-idle" />
-            <span className="text-xl font-bold tracking-tight text-slate-900">
-              Miru<span className="text-sky-600">Sync</span>
+            <MiruSyncLogo className="h-11 w-11 shrink-0 animate-float-idle" />
+            <span className="text-xl font-bold tracking-tight text-white">
+              Miru<span className="text-sky-400">Sync</span>
             </span>
           </div>
-          <span className="rounded-full bg-slate-900/10 border border-slate-900/10 px-2.5 py-0.5 text-[10px] font-medium text-slate-700 truncate max-w-[125px]">
+          <span className="rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-medium text-white/90 truncate max-w-[125px]">
             {SCENES[sceneIdx]?.title}
           </span>
         </div>
 
         <div className="space-y-1.5">
-          <h1 className="text-2xl font-extrabold tracking-tight leading-tight text-slate-900">
+          <h1 className="text-2xl font-extrabold tracking-tight leading-tight text-white">
             Track anime &amp; manga in one place.
           </h1>
-          <p className="text-sm text-slate-700 leading-relaxed">
+          <p className="text-sm text-slate-200 leading-relaxed">
             Sign in with MyAnimeList or AniList. Same fast experience across Desktop and Android, synced live.
           </p>
         </div>
@@ -117,7 +117,7 @@ export function MobileWelcomePage() {
             type="button"
             disabled={connecting !== null}
             onClick={() => handleLogin('mal')}
-            className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#00a6fb] hover:bg-[#0094e0] active:scale-[0.98] disabled:opacity-70 text-white font-semibold px-4 py-3 text-sm transition-all shadow-lg shadow-sky-500/25 cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#00a6fb] hover:bg-[#0094e0] active:scale-[0.98] disabled:opacity-70 text-white font-semibold px-4 py-3 text-sm transition-all cursor-pointer"
           >
             <MalIcon className="h-5 w-5 rounded" />
             Continue with MyAnimeList
@@ -127,7 +127,7 @@ export function MobileWelcomePage() {
             type="button"
             disabled={connecting !== null}
             onClick={() => handleLogin('anilist')}
-            className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl border border-slate-900/15 bg-slate-900/85 hover:bg-slate-900 active:scale-[0.98] disabled:opacity-70 text-white font-semibold px-4 py-3 text-sm transition-all cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl border border-white/25 bg-white/15 hover:bg-white/20 backdrop-blur-md active:scale-[0.98] disabled:opacity-70 text-white font-semibold px-4 py-3 text-sm transition-all cursor-pointer"
           >
             <AniListIcon className="h-5 w-5 rounded" />
             Continue with AniList

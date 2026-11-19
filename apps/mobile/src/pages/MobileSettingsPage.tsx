@@ -13,7 +13,6 @@ import { API_BASE, saveMobileSession } from '../lib/mobileAuth';
 import {
   updateAppearancePrefs,
   useAppearancePrefs,
-  type CardStyle,
   type RadiusStyle,
   type TextScale,
 } from '../lib/appearancePrefs';
@@ -122,29 +121,6 @@ export function MobileSettingsPage() {
           </div>
 
           <div className="space-y-2 pt-1">
-            <div className="text-xs text-slate-300 font-medium">Card Surface</div>
-            <div className="grid grid-cols-2 gap-2">
-              {([
-                { key: 'glass', label: 'Frosted Glass' },
-                { key: 'solid', label: 'Solid Cards' },
-              ] as { key: CardStyle; label: string }[]).map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => updateAppearancePrefs({ cardStyle: opt.key })}
-                  className={`rounded-xl border py-2 text-xs font-medium cursor-pointer ${
-                    appearance.cardStyle === opt.key
-                      ? 'border-sky-500/40 bg-sky-500/15 text-sky-300'
-                      : 'border-slate-800 bg-slate-950/60 text-slate-300'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
             <div className="text-xs text-slate-300 font-medium">Corner Style</div>
             <div className="grid grid-cols-2 gap-2">
               {([

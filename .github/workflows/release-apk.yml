@@ -92,6 +92,15 @@ jobs:
       - name: Prepare MiruSync.apk artifact
         run: cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk MiruSync.apk
 
+      - name: Build release notes from git log
+        run: |
+          NOTES=$(git log -n 5 --pretty=format:"- %s")
+          {
+            echo "RELEASE_NOTES<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -99,8 +108,4 @@ jobs:
           name: MiruSync ${{ env.RELEASE_TAG }}
           make_latest: true
           files: MiruSync.apk
-          body: |
-            MiruSync Android APK ${{ env.RELEASE_TAG }} (build ${{ env.VERSION_CODE }}).
-            - Signed with persistent release key for seamless in-place updates
-            - Capacitor Local Notifications & Airing Today Home-Screen Widget
-            - Unified MyAnimeList & AniList tracker with offline queue
+          body: ${{ env.RELEASE_NOTES }}

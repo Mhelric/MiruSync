@@ -91,7 +91,7 @@ export function MobileHomePage() {
               to="/anime"
               className="inline-flex items-center gap-2 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3.5 py-2"
             >
-              <Tv className="h-4 w-4 text-sky-400" />
+              <Tv className="h-4 w-4 text-sky-400 animate-float-idle" />
               <span className="text-base font-bold font-mono text-sky-400">
                 {animeList?.length ?? '—'}
               </span>
@@ -101,7 +101,7 @@ export function MobileHomePage() {
               to="/manga"
               className="inline-flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-2"
             >
-              <BookOpen className="h-4 w-4 text-indigo-400" />
+              <BookOpen className="h-4 w-4 text-indigo-400 animate-float-idle" />
               <span className="text-base font-bold font-mono text-indigo-400">
                 {mangaList?.length ?? '—'}
               </span>
@@ -367,7 +367,7 @@ export function MobileHomePage() {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold flex items-center gap-2">
-                <Clock className="h-4 w-4 text-emerald-400" />
+                <Clock className="h-4 w-4 text-emerald-400 animate-float-idle" />
                 Airing Soon
               </h2>
               <Link

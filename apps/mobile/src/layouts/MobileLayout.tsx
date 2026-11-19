@@ -61,7 +61,7 @@ export function MobileLayout({
               </button>
             ) : (
               <NavLink to="/home" className="shrink-0 flex items-center gap-2">
-                <MiruSyncLogo className="h-8 w-8 shadow-md shadow-sky-500/15" />
+                <MiruSyncLogo className="h-8 w-8" />
               </NavLink>
             )}
             <span className="text-base font-bold tracking-tight truncate">
@@ -133,23 +133,28 @@ export function MobileLayout({
       {!hideBottomNav && (
         <nav
           aria-label="Mobile navigation"
-          className="fixed bottom-3 left-3 right-3 z-40 rounded-2xl border border-white/10 bg-slate-900/90 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.65)] px-1.5 py-1.5 mb-[env(safe-area-inset-bottom)]"
+          className="fixed bottom-1.5 left-2.5 right-2.5 z-40 rounded-2xl border border-white/10 bg-slate-900/90 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.65)] px-2 py-2 mb-[env(safe-area-inset-bottom)]"
         >
           <div className="grid grid-cols-5 gap-1">
             {TABS.map(({ path, label, icon: Icon }) => {
               const active = location.pathname === path;
+              const isIdleAnimated = path === '/anime' || path === '/manga';
               return (
                 <button
                   key={path}
                   type="button"
                   onClick={() => navigate(path)}
-                  className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition-all cursor-pointer ${
+                  className={`flex flex-col items-center justify-center gap-1 rounded-xl py-2 text-[11px] font-medium transition-all cursor-pointer ${
                     active
                       ? 'bg-sky-500/15 text-sky-400 font-semibold'
                       : 'text-slate-400 active:scale-95'
                   }`}
                 >
-                  <Icon className={`h-4 w-4 transition-transform ${active ? 'scale-110 animate-icon-pop' : ''}`} />
+                  <Icon
+                    className={`h-5 w-5 transition-transform ${
+                      active ? 'scale-110 animate-icon-pop' : isIdleAnimated ? 'animate-float-idle' : ''
+                    }`}
+                  />
                   <span>{label}</span>
                 </button>
               );

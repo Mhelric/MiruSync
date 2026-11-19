@@ -286,12 +286,12 @@ export function MobileDiscoverPage() {
   return (
     <MobileLayout title="Discover">
       <div className="space-y-4">
-        {/* Top Segmented Pill Strip */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+        {/* Top Segmented 5-Column Pill Bar (all 5 tabs fit on screen) */}
+        <div className="grid grid-cols-5 gap-1 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-1">
           {[
             { key: 'popular' as const, label: 'Popular', icon: Flame },
             { key: 'new' as const, label: 'New', icon: Sparkles },
-            { key: 'calendar' as const, label: 'Calendar', icon: Calendar },
+            { key: 'calendar' as const, label: 'Schedule', icon: Calendar },
             { key: 'search' as const, label: 'Search', icon: Search },
             { key: 'news' as const, label: 'News', icon: Newspaper },
           ].map(({ key, label, icon: Icon }) => (
@@ -299,14 +299,14 @@ export function MobileDiscoverPage() {
               key={key}
               type="button"
               onClick={() => selectTab(key)}
-              className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+              className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 px-1 text-[10px] font-medium transition-all cursor-pointer ${
                 tab === key
-                  ? 'bg-sky-500 text-slate-950 font-semibold'
-                  : 'border border-slate-800 bg-slate-900/60 text-slate-300'
+                  ? 'bg-sky-500 text-slate-950 font-semibold shadow-sm'
+                  : 'text-slate-300'
               }`}
             >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
+              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{label}</span>
             </button>
           ))}
         </div>

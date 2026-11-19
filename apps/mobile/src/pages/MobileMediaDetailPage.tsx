@@ -341,31 +341,37 @@ export function MobileMediaDetailPage() {
                 className="flex w-full items-center justify-between text-[10px] font-mono uppercase text-slate-400 cursor-pointer"
               >
                 <span>Alternative Titles</span>
-                {showAltTitles ? (
-                  <ChevronUp className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                )}
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform duration-300 ${
+                    showAltTitles ? 'rotate-180' : ''
+                  }`}
+                />
               </button>
-              {showAltTitles && (
-                <div className="mt-2 space-y-1 text-[11px]">
-                  {media.title.romaji && (
-                    <p className="text-slate-300">Romaji: {media.title.romaji}</p>
-                  )}
-                  {media.title.english && (
-                    <p className="text-slate-300">English: {media.title.english}</p>
-                  )}
-                  {media.title.native && (
-                    <p className="text-slate-300">Native: {media.title.native}</p>
-                  )}
+              <div
+                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                  showAltTitles ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="mt-2 space-y-1 text-[11px]">
+                    {media.title.romaji && (
+                      <p className="text-slate-300">Romaji: {media.title.romaji}</p>
+                    )}
+                    {media.title.english && (
+                      <p className="text-slate-300">English: {media.title.english}</p>
+                    )}
+                    {media.title.native && (
+                      <p className="text-slate-300">Native: {media.title.native}</p>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
           {/* Expandable Tags */}
           {media.tags && media.tags.length > 0 && (
-            <div className="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-3.5 space-y-2.5">
+            <div className="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-3.5">
               <div className="flex items-center justify-between gap-2">
                 <button
                   type="button"
@@ -373,11 +379,11 @@ export function MobileMediaDetailPage() {
                   className="flex flex-1 items-center justify-between text-xs font-mono uppercase text-slate-400 cursor-pointer"
                 >
                   <span>Tags ({visibleTags.length})</span>
-                  {showTags ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform duration-300 ${
+                      showTags ? 'rotate-180' : ''
+                    }`}
+                  />
                 </button>
                 {showTags && media.tags.some((t) => t.isSpoiler) && (
                   <button
@@ -389,29 +395,35 @@ export function MobileMediaDetailPage() {
                   </button>
                 )}
               </div>
-              {showTags && (
-                <div className="flex flex-wrap gap-1.5">
-                  {visibleTags.slice(0, 14).map((t) => (
-                    <span
-                      key={t.name}
-                      className={`rounded-md border px-2 py-0.5 text-[11px] ${
-                        t.isSpoiler
-                          ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
-                          : 'border-slate-800 bg-slate-950/60 text-slate-300'
-                      }`}
-                    >
-                      {t.name}
-                      {t.rank ? ` · ${t.rank}%` : ''}
-                    </span>
-                  ))}
+              <div
+                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                  showTags ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="flex flex-wrap gap-1.5 pt-2.5">
+                    {visibleTags.slice(0, 14).map((t) => (
+                      <span
+                        key={t.name}
+                        className={`rounded-md border px-2 py-0.5 text-[11px] ${
+                          t.isSpoiler
+                            ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
+                            : 'border-slate-800 bg-slate-950/60 text-slate-300'
+                        }`}
+                      >
+                        {t.name}
+                        {t.rank ? ` · ${t.rank}%` : ''}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
 
           {/* Expandable Where to Watch & Links */}
           {media.streamingLinks && media.streamingLinks.length > 0 && (
-            <div className="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-3.5 space-y-2.5">
+            <div className="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-3.5">
               <button
                 type="button"
                 onClick={() => setShowLinks((v) => !v)}
@@ -421,27 +433,33 @@ export function MobileMediaDetailPage() {
                   {type === 'ANIME' ? 'Where to Watch & Links' : 'External Links'} (
                   {media.streamingLinks.length})
                 </span>
-                {showLinks ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-300 ${
+                    showLinks ? 'rotate-180' : ''
+                  }`}
+                />
               </button>
-              {showLinks && (
-                <div className="flex flex-wrap gap-2">
-                  {media.streamingLinks.map((link) => (
-                    <button
-                      key={link.url}
-                      type="button"
-                      onClick={() => void Browser.open({ url: link.url })}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-1.5 text-xs text-slate-200 cursor-pointer"
-                    >
-                      <span>{link.site}</span>
-                      <ExternalLink className="h-3 w-3 text-slate-400" />
-                    </button>
-                  ))}
+              <div
+                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                  showLinks ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="flex flex-wrap gap-2 pt-2.5">
+                    {media.streamingLinks.map((link) => (
+                      <button
+                        key={link.url}
+                        type="button"
+                        onClick={() => void Browser.open({ url: link.url })}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-1.5 text-xs text-slate-200 cursor-pointer"
+                      >
+                        <span>{link.site}</span>
+                        <ExternalLink className="h-3 w-3 text-slate-400" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
 
