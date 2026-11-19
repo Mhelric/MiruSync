@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, ChevronRight, Flame, Sparkles, Star, Tv } from 'lucide-react';
+import { BookOpen, ChevronRight, Flame, Star, Tv } from 'lucide-react';
 import {
   AniListProvider,
   formatMediaTitle,
@@ -18,6 +18,7 @@ import { DesktopLayout } from '../layouts/DesktopLayout';
 import { MediaCard } from '../components/MediaCard';
 import { DiscoverCard } from '../components/DiscoverCard';
 import { EditEntryModal } from '../components/EditEntryModal';
+import { TimeGreetingCard } from '../components/TimeGreetingCard';
 
 export function HomePage() {
   const session = useAuthStore((s) => s.session);
@@ -117,48 +118,12 @@ export function HomePage() {
   return (
     <DesktopLayout>
       <div className="space-y-6">
-        {/* Ambient Aurora Greeting Card */}
-        <section className="relative overflow-hidden rounded-3xl border border-sky-500/25 bg-slate-900/70 p-4 sm:p-5 flex flex-col gap-3 shadow-lg">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -top-12 -right-12 h-44 w-44 rounded-full bg-sky-500/25 blur-3xl animate-aurora"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -bottom-12 -left-10 h-36 w-36 rounded-full bg-indigo-500/20 blur-3xl animate-aurora"
-            style={{ animationDelay: '-4s' }}
-          />
-          <div className="relative z-10 space-y-3">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-sky-400">
-              <Sparkles className="h-3 w-3 animate-float-idle" />
-              {new Date().getHours() < 12
-                ? 'Good morning'
-                : new Date().getHours() < 18
-                  ? 'Good afternoon'
-                  : 'Good evening'}
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-100">
-              Welcome back, <span className="text-sky-400">{session?.user.name}</span>
-            </h1>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              <div className="inline-flex items-center gap-2 rounded-xl border border-sky-500/30 bg-sky-500/10 backdrop-blur-md px-3.5 py-2">
-                <Tv className="h-4 w-4 text-sky-400" />
-                <span className="text-base font-bold font-mono text-sky-400">
-                  {animeList?.length ?? '—'}
-                </span>
-                <span className="text-xs text-slate-300">Anime</span>
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 backdrop-blur-md px-3.5 py-2">
-                <BookOpen className="h-4 w-4 text-indigo-400" />
-                <span className="text-base font-bold font-mono text-indigo-400">
-                  {mangaList?.length ?? '—'}
-                </span>
-                <span className="text-xs text-slate-300">Manga</span>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Time-of-Day Animated Anime Sky Greeting Card */}
+        <TimeGreetingCard
+          username={session?.user.name}
+          animeCount={animeList?.length}
+          mangaCount={mangaList?.length}
+        />
 
         {/* Swipable Rotating Seasonal Trending Hero Banner */}
         <section

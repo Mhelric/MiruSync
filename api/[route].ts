@@ -32,9 +32,8 @@ const ROUTES: Record<string, WebHandler> = {
   news,
   schedule,
   'user-sync': userSync,
-  'cron-notify': async () => {
-    await cronNotify();
-    return Response.json({ ok: true });
+  'cron-notify': async (req) => {
+    return await cronNotify(req);
   },
 };
 

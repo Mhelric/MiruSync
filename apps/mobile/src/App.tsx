@@ -23,6 +23,7 @@ import {
   loadMobileSession,
 } from './lib/mobileAuth';
 import { syncAiringNotificationsAndWidget } from './lib/mobileSyncWidgets';
+import { registerMobilePush } from './lib/mobilePush';
 import {
   closeUpdateModal,
   setUpdateAvailable,
@@ -72,12 +73,18 @@ const MOBILE_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 function MobileBackgroundSync() {
   useSettingsSync(MOBILE_SUPABASE_URL, MOBILE_SUPABASE_ANON_KEY, API_BASE);
+  const session = useAuthStore((s) => s.session);
   const { data: animeList } = useMediaList('ANIME', undefined, API_BASE);
   const notificationsEnabled = useSettingsStore(
     (s) => s.settings.notifications_enabled
   );
   const quietHours = useSettingsStore((s) => s.settings.quiet_hours);
   const titleLang = useSettingsStore((s) => s.settings.title_language);
+
+  useEffect(() => {
+    if (!session?.user.id || !notificationsEnabled) return;
+    void registerMobilePush(session.user.id, session.supabaseJwt);
+  }, [session?.user.id, session?.supabaseJwt, notificationsEnabled]);
 
   useEffect(() => {
     if (!animeList) return;

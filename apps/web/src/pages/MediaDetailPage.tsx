@@ -3,6 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Award,
+  Bell,
+  BellOff,
+  BookOpen,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -20,6 +23,8 @@ import {
   formatMediaTitle,
   useAuthStore,
   useDeleteEntry,
+  useFollowedTitles,
+  useMangaDexChapters,
   useMediaDetail,
   useMediaList,
   useSettingsStore,
@@ -44,6 +49,13 @@ export function MediaDetailPage() {
   const { data: list } = useMediaList(type);
   const updateEntry = useUpdateEntry();
   const deleteEntry = useDeleteEntry();
+  const { isFollowing, toggleFollow } = useFollowedTitles();
+  const mangaSearchTitle =
+    type === 'MANGA' ? media?.title.english || media?.title.romaji : undefined;
+  const { data: mangaDexData } = useMangaDexChapters(
+    mangaSearchTitle,
+    type === 'MANGA' && Boolean(mangaSearchTitle)
+  );
 
   const [editing, setEditing] = useState(false);
   const [showSpoilerTags, setShowSpoilerTags] = useState(false);
@@ -103,6 +115,86 @@ export function MediaDetailPage() {
         const cleanSynopsis = media.synopsis
           ? media.synopsis.replace(/<[^>]+>/g, '').trim()
           : '';
+        const following = isFollowing(media.id);
+        const latestChapter = mangaDexData?.chapters?.[0]?.chapter ?? null;
+
+        const followAlertBtn = (
+          <button
+            type="button"
+            disabled={toggleFollow.isPending}
+            onClick={() =>
+              toggleFollow.mutate({
+                media,
+                currentlyFollowing: following,
+                latestChapter,
+              })
+            }
+            className={`w-full inline-flex items-center justify-center gap-2 rounded-xl border py-2 text-xs font-semibold transition-colors cursor-pointer ${
+              following
+                ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/20'
+                : 'border-slate-700 bg-slate-900/70 text-slate-300 hover:border-sky-500/50 hover:text-sky-300'
+            }`}
+          >
+            {following ? (
+              <>
+                <Bell className="h-3.5 w-3.5" />
+                Release Alerts On
+              </>
+            ) : (
+              <>
+                <BellOff className="h-3.5 w-3.5" />
+                {type === 'MANGA' ? 'Follow Chapter Alerts' : 'Follow Episode Alerts'}
+              </>
+            )}
+          </button>
+        );
+
+        const mangaDexBlock =
+          type === 'MANGA' && mangaDexData && mangaDexData.chapters.length > 0 ? (
+            <div className="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <BookOpen className="h-3.5 w-3.5 text-sky-400" />
+                  Latest Chapters (MangaDex)
+                </h3>
+                {mangaDexData.mangaId && (
+                  <a
+                    href={`https://mangadex.org/title/${mangaDexData.mangaId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-sky-400 hover:underline"
+                  >
+                    Open MangaDex
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                {mangaDexData.chapters.map((ch) => (
+                  <a
+                    key={ch.id}
+                    href={ch.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-800/80 bg-slate-950/60 px-3 py-2 text-xs hover:border-sky-500/50 transition-colors"
+                  >
+                    <div className="min-w-0 truncate">
+                      <span className="font-semibold text-sky-400 font-mono">
+                        Ch. {ch.chapter}
+                      </span>
+                      {ch.title && (
+                        <span className="ml-2 text-slate-300">{ch.title}</span>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-[11px] text-slate-400">
+                      {new Date(ch.publishedAt).toLocaleDateString()}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : null;
+
         const isLongSynopsis = cleanSynopsis.length > 260;
 
         const airingBanner = media.nextAiring ? (
@@ -402,9 +494,11 @@ export function MediaDetailPage() {
               </button>
             )}
 
+            {followAlertBtn}
             {airingBanner}
             {genresBlock}
             {synopsisBlock}
+            {mangaDexBlock}
             {rankingsBlock}
 
             {/* Mobile 2-Column Metadata Grid */}
@@ -588,6 +682,8 @@ export function MediaDetailPage() {
                 </button>
               )}
 
+              {followAlertBtn}
+
               {/* Structured Info Box */}
               <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-4 space-y-3 text-xs">
                 {media.format && (
@@ -727,6 +823,7 @@ export function MediaDetailPage() {
               {rankingsBlock}
               {genresBlock}
               {synopsisBlock}
+              {mangaDexBlock}
               {tagsBlock}
               {linksBlock}
               {trailerBlock}

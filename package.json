@@ -13,10 +13,14 @@
   "devDependencies": {
     "@netlify/functions": "^3.0.0",
     "@types/node": "^22.0.0",
+    "@types/web-push": "^3.6.4",
     "typescript": "^5.7.2"
   },
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
+  },
+  "dependencies": {
+    "web-push": "^4.0.0"
   }
 }

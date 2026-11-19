@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "338402428727",
+    "project_id": "mirusync",
+    "storage_bucket": "mirusync.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:338402428727:android:5962af61601334bf7cbcb2",
+        "android_client_info": {
+          "package_name": "io.mirusync.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGbyB3ZJYYI06BM9h6SwqIICMW1kUSsG0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

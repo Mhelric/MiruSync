@@ -3,6 +3,9 @@ import { Link, useParams } from 'react-router-dom';
 import { Browser } from '@capacitor/browser';
 import {
   Award,
+  Bell,
+  BellOff,
+  BookOpen,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -20,7 +23,9 @@ import {
   formatMediaTitle,
   useAuthStore,
   useDeleteEntry,
+  useFollowedTitles,
   useLocalPrefsStore,
+  useMangaDexChapters,
   useMediaDetail,
   useMediaList,
   useSettingsStore,
@@ -45,6 +50,14 @@ export function MobileMediaDetailPage() {
   const { data: list } = useMediaList(type, undefined, API_BASE);
   const updateEntry = useUpdateEntry(API_BASE);
   const deleteEntry = useDeleteEntry(API_BASE);
+  const { isFollowing, toggleFollow } = useFollowedTitles(API_BASE);
+  const mangaSearchTitle =
+    type === 'MANGA' ? media?.title.english || media?.title.romaji : undefined;
+  const { data: mangaDexData } = useMangaDexChapters(
+    mangaSearchTitle,
+    type === 'MANGA' && Boolean(mangaSearchTitle),
+    API_BASE
+  );
 
   const [editing, setEditing] = useState(false);
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
@@ -200,6 +213,42 @@ export function MobileMediaDetailPage() {
             </button>
           )}
 
+          {/* Release Alerts Toggle */}
+          {(() => {
+            const following = isFollowing(media.id);
+            const latestChapter = mangaDexData?.chapters?.[0]?.chapter ?? null;
+            return (
+              <button
+                type="button"
+                disabled={toggleFollow.isPending}
+                onClick={() =>
+                  toggleFollow.mutate({
+                    media,
+                    currentlyFollowing: following,
+                    latestChapter,
+                  })
+                }
+                className={`w-full inline-flex items-center justify-center gap-2 rounded-2xl border py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
+                  following
+                    ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300'
+                    : 'border-slate-800 bg-slate-900/70 text-slate-200'
+                }`}
+              >
+                {following ? (
+                  <>
+                    <Bell className="h-3.5 w-3.5" />
+                    Release Alerts On
+                  </>
+                ) : (
+                  <>
+                    <BellOff className="h-3.5 w-3.5" />
+                    {type === 'MANGA' ? 'Follow Chapter Alerts' : 'Follow Episode Alerts'}
+                  </>
+                )}
+              </button>
+            );
+          })()}
+
           {/* Airing Countdown */}
           {media.nextAiring && (
             <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs font-medium text-emerald-300">
@@ -254,6 +303,54 @@ export function MobileMediaDetailPage() {
                   )}
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Latest MangaDex Chapters */}
+          {type === 'MANGA' && mangaDexData && mangaDexData.chapters.length > 0 && (
+            <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-[11px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <BookOpen className="h-3.5 w-3.5 text-sky-400" />
+                  Latest Chapters (MangaDex)
+                </h3>
+                {mangaDexData.mangaId && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void Browser.open({
+                        url: `https://mangadex.org/title/${mangaDexData.mangaId}`,
+                      })
+                    }
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-sky-400 cursor-pointer"
+                  >
+                    Open
+                    <ExternalLink className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                {mangaDexData.chapters.map((ch) => (
+                  <button
+                    key={ch.id}
+                    type="button"
+                    onClick={() => void Browser.open({ url: ch.url })}
+                    className="w-full flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-left text-xs active:scale-[0.99] transition-transform cursor-pointer"
+                  >
+                    <div className="min-w-0 truncate">
+                      <span className="font-semibold text-sky-400 font-mono">
+                        Ch. {ch.chapter}
+                      </span>
+                      {ch.title && (
+                        <span className="ml-2 text-slate-200">{ch.title}</span>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-[10px] text-slate-400">
+                      {new Date(ch.publishedAt).toLocaleDateString()}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { resolveApiBase } from '../apiBase';
 import { useAuthStore } from '../auth/store';
+import type { Media } from '../providers/types';
 import { getSupabaseClient } from '../supabase/client';
 
 export interface AppNotification {
@@ -122,13 +124,13 @@ export function useNotifications(
   const markAllRead = useCallback(async () => {
     setItems((prev) => prev.map((item) => ({ ...item, read: true })));
     if (!session?.user.id) return;
-    await fetch(`${apiBase}/api/user-sync`, {
+    await fetch(`${resolvedApiBase}/api/user-sync`, {
       method: 'PATCH',
       credentials: 'include',
       headers: buildSyncHeaders(session.supabaseJwt),
       body: JSON.stringify({ markAllNotificationsRead: true }),
     });
-  }, [session?.user.id, session?.supabaseJwt, apiBase]);
+  }, [session?.user.id, session?.supabaseJwt, resolvedApiBase]);
 
   const unreadCount = items.filter((i) => !i.read).length;
 
@@ -192,4 +194,146 @@ export async function registerWebPush(
   });
 
   return true;
+}
+
+export interface FollowedTitle {
+  id?: string;
+  user_id?: string;
+  media_id: string;
+  media_type: 'ANIME' | 'MANGA';
+  al_id?: number | null;
+  mal_id?: number | null;
+  title: string;
+  last_notified_ep?: number | null;
+  last_notified_chapter?: string | null;
+}
+
+export function useFollowedTitles(apiBase = '') {
+  const session = useAuthStore((s) => s.session);
+  const resolvedApiBase = resolveApiBase(apiBase);
+  const queryClient = useQueryClient();
+  const userId = session?.user.id ?? '';
+
+  const query = useQuery<FollowedTitle[]>({
+    queryKey: ['followedTitles', userId],
+    enabled: Boolean(userId),
+    staleTime: 1000 * 60 * 5,
+    queryFn: async () => {
+      const res = await fetch(`${resolvedApiBase}/api/user-sync`, {
+        credentials: 'include',
+        headers: buildSyncHeaders(session?.supabaseJwt),
+      });
+      if (!res.ok) return [];
+      const json = (await res.json()) as { followedTitles?: FollowedTitle[] };
+      return json.followedTitles ?? [];
+    },
+  });
+
+  const toggleFollow = useMutation({
+    mutationFn: async ({
+      media,
+      currentlyFollowing,
+      latestChapter,
+    }: {
+      media: Media;
+      currentlyFollowing: boolean;
+      latestChapter?: string | null;
+    }) => {
+      if (!userId) return;
+      const body = currentlyFollowing
+        ? { unfollowMediaId: media.id }
+        : {
+            followTitle: {
+              media_id: media.id,
+              media_type: media.type,
+              al_id: media.alId ?? null,
+              mal_id: media.malId ?? null,
+              title: media.title.english || media.title.romaji || media.title.native || 'Untitled',
+              last_notified_ep: media.nextAiring?.episode ? Math.max(0, media.nextAiring.episode - 1) : 0,
+              last_notified_chapter: latestChapter ?? null,
+            },
+          };
+
+      const res = await fetch(`${resolvedApiBase}/api/user-sync`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: buildSyncHeaders(session?.supabaseJwt),
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        throw new Error('Failed to update release alerts');
+      }
+    },
+    onMutate: async ({ media, currentlyFollowing }) => {
+      await queryClient.cancelQueries({ queryKey: ['followedTitles', userId] });
+      const previous = queryClient.getQueryData<FollowedTitle[]>(['followedTitles', userId]) ?? [];
+      if (currentlyFollowing) {
+        queryClient.setQueryData<FollowedTitle[]>(
+          ['followedTitles', userId],
+          previous.filter((f) => f.media_id !== media.id)
+        );
+      } else {
+        queryClient.setQueryData<FollowedTitle[]>(
+          ['followedTitles', userId],
+          [
+            {
+              media_id: media.id,
+              media_type: media.type,
+              al_id: media.alId ?? null,
+              mal_id: media.malId ?? null,
+              title: media.title.english || media.title.romaji || 'Untitled',
+            },
+            ...previous,
+          ]
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(['followedTitles', userId], ctx.previous);
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['followedTitles', userId] });
+    },
+  });
+
+  const followedSet = new Set((query.data ?? []).map((f) => f.media_id));
+
+  return {
+    followedTitles: query.data ?? [],
+    isFollowing: (mediaId?: string) => Boolean(mediaId && followedSet.has(mediaId)),
+    toggleFollow,
+    isLoading: query.isLoading,
+  };
+}
+
+export interface MangaDexChapter {
+  id: string;
+  chapter: string;
+  title: string;
+  publishedAt: string;
+  url: string;
+}
+
+export function useMangaDexChapters(
+  title: string | undefined,
+  enabled: boolean,
+  apiBase = ''
+) {
+  const resolvedApiBase = resolveApiBase(apiBase);
+  return useQuery<{ mangaId?: string; chapters: MangaDexChapter[] }>({
+    queryKey: ['mangadexChapters', title],
+    enabled: Boolean(enabled && title),
+    staleTime: 1000 * 60 * 15,
+    queryFn: async () => {
+      if (!title) return { chapters: [] };
+      const res = await fetch(
+        `${resolvedApiBase}/api/mangadex-chapters?title=${encodeURIComponent(title)}`
+      );
+      if (!res.ok) return { chapters: [] };
+      return (await res.json()) as { mangaId?: string; chapters: MangaDexChapter[] };
+    },
+  });
 }

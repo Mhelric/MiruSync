@@ -17,6 +17,7 @@
     "@capacitor/core": "^7.0.0",
     "@capacitor/local-notifications": "^7.0.7",
     "@capacitor/preferences": "^7.0.4",
+    "@capacitor/push-notifications": "^7.0.7",
     "@mirusync/core": "workspace:*",
     "@tanstack/react-query": "^5.62.7",
     "konsta": "^4.0.0",

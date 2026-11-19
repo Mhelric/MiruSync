@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, ChevronRight, Clock, Flame, Plus, Sparkles, Star, Tv } from 'lucide-react';
+import { BookOpen, ChevronRight, Clock, Flame, Plus, Star, Tv } from 'lucide-react';
 import {
   formatCountdown,
   formatMediaTitle,
@@ -13,6 +13,7 @@ import {
   useUpdateEntry,
 } from '@mirusync/core';
 import { MobileLayout } from '../layouts/MobileLayout';
+import { TimeGreetingCard } from '../components/TimeGreetingCard';
 import { API_BASE } from '../lib/mobileAuth';
 
 export function MobileHomePage() {
@@ -81,55 +82,12 @@ export function MobileHomePage() {
   return (
     <MobileLayout>
       <div className="space-y-6">
-        {/* Ambient Aurora Greeting Card */}
-        <section className="relative overflow-hidden rounded-3xl border border-sky-500/25 bg-slate-900/70 p-4 space-y-3 shadow-lg">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -top-10 -right-10 h-36 w-36 rounded-full bg-sky-500/25 blur-2xl animate-aurora"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-indigo-500/20 blur-2xl animate-aurora"
-            style={{ animationDelay: '-4s' }}
-          />
-          <div className="relative z-10 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-sky-400">
-                <Sparkles className="h-3 w-3 animate-float-idle" />
-                {new Date().getHours() < 12
-                  ? 'Good morning'
-                  : new Date().getHours() < 18
-                    ? 'Good afternoon'
-                    : 'Good evening'}
-              </span>
-            </div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-100">
-              Welcome back, <span className="text-sky-400">{session?.user.name}</span>
-            </h1>
-            <div className="flex items-center gap-2.5">
-              <Link
-                to="/anime"
-                className="inline-flex items-center gap-2 rounded-xl border border-sky-500/30 bg-sky-500/10 backdrop-blur-md px-3.5 py-2"
-              >
-                <Tv className="h-4 w-4 text-sky-400 animate-float-idle" />
-                <span className="text-base font-bold font-mono text-sky-400">
-                  {animeList?.length ?? '—'}
-                </span>
-                <span className="text-xs text-slate-300">Anime</span>
-              </Link>
-              <Link
-                to="/manga"
-                className="inline-flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 backdrop-blur-md px-3.5 py-2"
-              >
-                <BookOpen className="h-4 w-4 text-indigo-400 animate-float-idle" />
-                <span className="text-base font-bold font-mono text-indigo-400">
-                  {mangaList?.length ?? '—'}
-                </span>
-                <span className="text-xs text-slate-300">Manga</span>
-              </Link>
-            </div>
-          </div>
-        </section>
+        {/* Time-of-Day Animated Anime Sky Greeting Card */}
+        <TimeGreetingCard
+          username={session?.user.name}
+          animeCount={animeList?.length}
+          mangaCount={mangaList?.length}
+        />
 
         {/* Swipeable Trending Hero Card */}
         {activeHero && (
