@@ -98,7 +98,7 @@ export function DesktopLayout({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 flex overflow-x-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-50 flex overflow-x-clip">
       {/* Hidable Left Sidebar (Desktop) */}
       <aside
         className={`hidden md:flex shrink-0 border-r border-slate-800/80 bg-slate-900/40 flex-col justify-between p-3 sticky top-0 h-screen transition-all duration-300 ease-out ${
