@@ -2,28 +2,28 @@ import { useEffect, useState } from 'react';
 import { Browser } from '@capacitor/browser';
 import { Download } from 'lucide-react';
 import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
-import { startMobileOAuth } from '../lib/mobileAuth';
+import { API_BASE, startMobileOAuth } from '../lib/mobileAuth';
 import { openUpdateModal, useUpdateState } from '../lib/updateStore';
 
 const SCENES = [
-  { title: 'Frieren', gifUrl: '/scenes/frieren.gif', durationMs: 2200 },
-  { title: 'One Piece', gifUrl: '/scenes/onepiece.gif', durationMs: 4600 },
-  { title: 'Vinland Saga', gifUrl: '/scenes/vinland.gif', durationMs: 1400 },
-  { title: 'Attack on Titan', gifUrl: '/scenes/aot.gif', durationMs: 5500 },
-  { title: 'Jujutsu Kaisen', gifUrl: '/scenes/jjk.gif', durationMs: 7260 },
-  { title: 'Demon Slayer', gifUrl: '/scenes/demonslayer.gif', durationMs: 3200 },
-  { title: 'My Hero Academia', gifUrl: '/scenes/mha.gif', durationMs: 1800 },
-  { title: 'Fullmetal Alchemist', gifUrl: '/scenes/fmab.gif', durationMs: 2500 },
-  { title: 'Black Clover', gifUrl: '/scenes/asta-swordofthewizardking.gif', durationMs: 4010 },
-  { title: 'Dandadan', gifUrl: '/scenes/dandadan.gif', durationMs: 5600 },
-  { title: 'Deku', gifUrl: '/scenes/deku-mha.gif', durationMs: 1560 },
-  { title: 'Dr. Stone', gifUrl: '/scenes/dr-stone-tsukasa.gif', durationMs: 3810 },
-  { title: 'Gurren Lagann', gifUrl: '/scenes/gurren-lagann-simon.gif', durationMs: 1900 },
-  { title: 'Haikyu!!', gifUrl: '/scenes/haikyuu-anime.gif', durationMs: 2000 },
-  { title: 'Kimi ni Todoke', gifUrl: '/scenes/hold-close-comfurt-anime.gif', durationMs: 1760 },
-  { title: 'KonoSuba', gifUrl: '/scenes/megumin-thumbs-up.gif', durationMs: 3000 },
-  { title: 'Naruto & Sasuke', gifUrl: '/scenes/naruto-sasuke.gif', durationMs: 1600 },
-  { title: 'Solo Leveling', gifUrl: '/scenes/solo-leveling-statue-smile-solo-leveling.gif', durationMs: 3100 },
+  { title: 'Frieren', gifUrl: `${API_BASE}/scenes/frieren.gif`, durationMs: 2200 },
+  { title: 'One Piece', gifUrl: `${API_BASE}/scenes/onepiece.gif`, durationMs: 4600 },
+  { title: 'Vinland Saga', gifUrl: `${API_BASE}/scenes/vinland.gif`, durationMs: 1400 },
+  { title: 'Attack on Titan', gifUrl: `${API_BASE}/scenes/aot.gif`, durationMs: 5500 },
+  { title: 'Jujutsu Kaisen', gifUrl: `${API_BASE}/scenes/jjk.gif`, durationMs: 7260 },
+  { title: 'Demon Slayer', gifUrl: `${API_BASE}/scenes/demonslayer.gif`, durationMs: 3200 },
+  { title: 'My Hero Academia', gifUrl: `${API_BASE}/scenes/mha.gif`, durationMs: 1800 },
+  { title: 'Fullmetal Alchemist', gifUrl: `${API_BASE}/scenes/fmab.gif`, durationMs: 2500 },
+  { title: 'Black Clover', gifUrl: `${API_BASE}/scenes/asta-swordofthewizardking.gif`, durationMs: 4010 },
+  { title: 'Dandadan', gifUrl: `${API_BASE}/scenes/dandadan.gif`, durationMs: 5600 },
+  { title: 'Deku', gifUrl: `${API_BASE}/scenes/deku-mha.gif`, durationMs: 1560 },
+  { title: 'Dr. Stone', gifUrl: `${API_BASE}/scenes/dr-stone-tsukasa.gif`, durationMs: 3810 },
+  { title: 'Gurren Lagann', gifUrl: `${API_BASE}/scenes/gurren-lagann-simon.gif`, durationMs: 1900 },
+  { title: 'Haikyu!!', gifUrl: `${API_BASE}/scenes/haikyuu-anime.gif`, durationMs: 2000 },
+  { title: 'Kimi ni Todoke', gifUrl: `${API_BASE}/scenes/hold-close-comfurt-anime.gif`, durationMs: 1760 },
+  { title: 'KonoSuba', gifUrl: `${API_BASE}/scenes/megumin-thumbs-up.gif`, durationMs: 3000 },
+  { title: 'Naruto & Sasuke', gifUrl: `${API_BASE}/scenes/naruto-sasuke.gif`, durationMs: 1600 },
+  { title: 'Solo Leveling', gifUrl: `${API_BASE}/scenes/solo-leveling-statue-smile-solo-leveling.gif`, durationMs: 3100 },
 ];
 
 function buildShuffledQueue(length: number, excludeFirst?: number): number[] {
