@@ -1,5 +1,5 @@
 import type { Config } from '@netlify/functions';
-import webpush from 'web-push';
+import type { PushSubscription as WebPushSubscription } from 'web-push';
 import { getPushDiagnostics, sendFcmNotification } from './_lib/push';
 
 const ANILIST_ENDPOINT = 'https://graphql.anilist.co';
@@ -290,12 +290,22 @@ export default async function handler(req?: Request): Promise<Response> {
           .map((s) => s.user_id)
       );
 
+      type WebPushModule = typeof import('web-push');
+      let webpush: WebPushModule | null = null;
       if (pushDiag.vapidConfigured) {
-        webpush.setVapidDetails(
-          'mailto:notifications@mirusync.app',
-          process.env.VAPID_PUBLIC_KEY!.trim(),
-          process.env.VAPID_PRIVATE_KEY!.trim()
-        );
+        try {
+          const mod = (await import('web-push')) as WebPushModule & {
+            default?: WebPushModule;
+          };
+          webpush = mod.default ?? mod;
+          webpush.setVapidDetails(
+            'mailto:notifications@mirusync.app',
+            process.env.VAPID_PUBLIC_KEY!.trim(),
+            process.env.VAPID_PRIVATE_KEY!.trim()
+          );
+        } catch {
+          webpush = null;
+        }
       }
 
       for (const notif of notificationsToInsert) {
@@ -321,13 +331,13 @@ export default async function handler(req?: Request): Promise<Response> {
             if (result.ok) fcmSent++;
           } else if (
             sub.platform === 'web' &&
-            pushDiag.vapidConfigured &&
+            webpush &&
             typeof sub.token_or_subscription === 'object' &&
             sub.token_or_subscription?.endpoint
           ) {
             try {
               await webpush.sendNotification(
-                sub.token_or_subscription as webpush.PushSubscription,
+                sub.token_or_subscription as unknown as WebPushSubscription,
                 JSON.stringify({
                   title: notif.title,
                   body: notif.body,
