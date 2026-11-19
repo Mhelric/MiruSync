@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Info, Moon, Palette, ShieldAlert, Sun, Trash2 } from 'lucide-react';
+import { Bell, Info, LogOut, Moon, Palette, ShieldAlert, Sun, Trash2 } from 'lucide-react';
 import {
   db,
   useAuthStore,
@@ -10,6 +10,13 @@ import {
 } from '@mirusync/core';
 import { MobileLayout } from '../layouts/MobileLayout';
 import { API_BASE, saveMobileSession } from '../lib/mobileAuth';
+import {
+  updateAppearancePrefs,
+  useAppearancePrefs,
+  type CardStyle,
+  type RadiusStyle,
+  type TextScale,
+} from '../lib/appearancePrefs';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -33,8 +40,14 @@ export function MobileSettingsPage() {
 
   const shortTitles = useLocalPrefsStore((s) => s.shortTitles);
   const setShortTitles = useLocalPrefsStore((s) => s.setShortTitles);
+  const appearance = useAppearancePrefs();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  function handleSignOut() {
+    saveMobileSession(null);
+    setSession(null);
+  }
 
   async function handleDeleteCloudData() {
     if (!session?.supabaseJwt) return;
@@ -103,6 +116,76 @@ export function MobileSettingsPage() {
                 >
                   <span className={`h-2.5 w-2.5 rounded-full ${a.dot}`} />
                   {a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-1">
+            <div className="text-xs text-slate-300 font-medium">Card Surface</div>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { key: 'glass', label: 'Frosted Glass' },
+                { key: 'solid', label: 'Solid Cards' },
+              ] as { key: CardStyle; label: string }[]).map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => updateAppearancePrefs({ cardStyle: opt.key })}
+                  className={`rounded-xl border py-2 text-xs font-medium cursor-pointer ${
+                    appearance.cardStyle === opt.key
+                      ? 'border-sky-500/40 bg-sky-500/15 text-sky-300'
+                      : 'border-slate-800 bg-slate-950/60 text-slate-300'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-xs text-slate-300 font-medium">Corner Style</div>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { key: 'rounded', label: 'Soft Rounded' },
+                { key: 'sharp', label: 'Sleek Crisp' },
+              ] as { key: RadiusStyle; label: string }[]).map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => updateAppearancePrefs({ radiusStyle: opt.key })}
+                  className={`rounded-xl border py-2 text-xs font-medium cursor-pointer ${
+                    appearance.radiusStyle === opt.key
+                      ? 'border-sky-500/40 bg-sky-500/15 text-sky-300'
+                      : 'border-slate-800 bg-slate-950/60 text-slate-300'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-xs text-slate-300 font-medium">Text Size</div>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { key: 'compact', label: 'Compact' },
+                { key: 'normal', label: 'Normal' },
+                { key: 'large', label: 'Large' },
+              ] as { key: TextScale; label: string }[]).map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => updateAppearancePrefs({ textScale: opt.key })}
+                  className={`rounded-xl border py-2 text-xs font-medium cursor-pointer ${
+                    appearance.textScale === opt.key
+                      ? 'border-sky-500/40 bg-sky-500/15 text-sky-300'
+                      : 'border-slate-800 bg-slate-950/60 text-slate-300'
+                  }`}
+                >
+                  {opt.label}
                 </button>
               ))}
             </div>
@@ -208,6 +291,18 @@ export function MobileSettingsPage() {
               className="h-4 w-4 accent-sky-500"
             />
           </label>
+        </section>
+
+        {/* Sign Out */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-950/60 py-2.5 text-xs font-semibold text-slate-200 cursor-pointer"
+          >
+            <LogOut className="h-3.5 w-3.5 text-rose-400" />
+            Sign Out
+          </button>
         </section>
 
         {/* Danger Zone */}

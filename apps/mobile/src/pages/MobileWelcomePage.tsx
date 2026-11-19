@@ -50,64 +50,74 @@ export function MobileWelcomePage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-50 flex flex-col justify-between pb-[max(env(safe-area-inset-bottom),1.5rem)]">
+    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-50 flex items-center justify-center p-4">
       {updateInfo && (
         <button
           type="button"
           onClick={openUpdateModal}
-          className="fixed top-[max(env(safe-area-inset-top),0.75rem)] left-4 right-4 z-40 rounded-2xl border border-sky-400/40 bg-slate-900/90 backdrop-blur-xl px-3.5 py-2 flex items-center justify-between gap-2 text-xs text-sky-300 shadow-xl cursor-pointer"
+          className="fixed top-[max(env(safe-area-inset-top),0.75rem)] left-4 right-4 z-40 rounded-2xl border border-sky-400/40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-3.5 py-2 flex items-center justify-between gap-2 text-xs text-sky-700 shadow-xl cursor-pointer"
         >
           <span className="inline-flex items-center gap-1.5 font-medium truncate">
-            <Download className="h-3.5 w-3.5 shrink-0" />
+            <Download className="h-3.5 w-3.5 shrink-0 animate-float-idle" />
             Update v{updateInfo.version} available
           </span>
           <span className="font-semibold underline shrink-0">Tap to update</span>
         </button>
       )}
-      {/* Crisp High-Res Cinematic Anime Scene Showcase */}
-      <div className="relative w-full h-[46vh] min-h-[300px] overflow-hidden bg-slate-950 shrink-0" aria-hidden="true">
+
+      {/* Full-Screen Crisp Unblurred Anime Scene Background */}
+      <div className="fixed inset-0 z-0 overflow-hidden bg-slate-950" aria-hidden="true">
         {SCENES.map((scene, idx) => (
           <img
             key={scene.title}
             src={scene.gifUrl}
             alt={scene.title}
+            decoding="async"
             className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ${
               idx === sceneIdx ? 'opacity-100' : 'opacity-0'
             }`}
+            style={{ imageRendering: 'auto' }}
           />
         ))}
-        {/* Subtle top safe-area & smooth bottom fade into slate-950 */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/45 via-transparent to-slate-950" />
-        <div className="absolute bottom-14 left-4 z-10 rounded-full border border-white/15 bg-slate-950/60 backdrop-blur-md px-3 py-1 text-[11px] font-medium text-slate-200">
-          {SCENES[sceneIdx]?.title}
-        </div>
+        {/* Light radial vignette so the crisp GIF stays vivid & visible */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(circle at center, rgba(2,6,23,0.12) 0%, rgba(2,6,23,0.45) 75%, rgba(2,6,23,0.68) 100%)',
+          }}
+        />
       </div>
 
-      {/* Glassmorphism Sign-In Card */}
-      <div className="relative z-10 -mt-12 px-4 flex-1 flex items-start justify-center">
-        <div className="w-full max-w-sm rounded-3xl overflow-hidden backdrop-blur-md bg-slate-900/75 border border-white/15 p-6 shadow-2xl space-y-5">
-        <div className="flex items-center gap-3">
-          <MiruSyncLogo className="h-11 w-11 shrink-0 drop-shadow-lg" />
-          <span className="text-xl font-bold tracking-tight text-white">
-            Miru<span className="text-sky-400">Sync</span>
+      {/* White-Frosted Glassmorphism Sign-In Card (lets the crisp anime scene shine through) */}
+      <div className="relative z-10 w-full max-w-sm rounded-3xl overflow-hidden bg-white/75 backdrop-blur-xl border border-white/60 p-7 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.45)] space-y-5 text-slate-900">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <MiruSyncLogo className="h-11 w-11 shrink-0 drop-shadow-md animate-float-idle" />
+            <span className="text-xl font-bold tracking-tight text-slate-900">
+              Miru<span className="text-sky-600">Sync</span>
+            </span>
+          </div>
+          <span className="rounded-full bg-slate-900/10 border border-slate-900/10 px-2.5 py-0.5 text-[10px] font-medium text-slate-700 truncate max-w-[125px]">
+            {SCENES[sceneIdx]?.title}
           </span>
         </div>
 
-        <div className="space-y-2">
-          <h1 className="text-2xl font-extrabold tracking-tight leading-tight text-white">
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-extrabold tracking-tight leading-tight text-slate-900">
             Track anime &amp; manga in one place.
           </h1>
-          <p className="text-sm text-slate-300/90 leading-relaxed">
+          <p className="text-sm text-slate-700 leading-relaxed">
             Sign in with MyAnimeList or AniList. Same fast experience across Desktop and Android, synced live.
           </p>
         </div>
 
-        <div className="space-y-3 pt-1">
+        <div className="space-y-2.5 pt-1">
           <button
             type="button"
             disabled={connecting !== null}
             onClick={() => handleLogin('mal')}
-            className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#00a6fb] hover:bg-[#33b8fc] disabled:opacity-70 text-slate-950 font-semibold px-4 py-3 text-sm transition-all shadow-lg shadow-sky-500/20 cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#00a6fb] hover:bg-[#0094e0] active:scale-[0.98] disabled:opacity-70 text-white font-semibold px-4 py-3 text-sm transition-all shadow-lg shadow-sky-500/25 cursor-pointer"
           >
             <MalIcon className="h-5 w-5 rounded" />
             Continue with MyAnimeList
@@ -117,27 +127,26 @@ export function MobileWelcomePage() {
             type="button"
             disabled={connecting !== null}
             onClick={() => handleLogin('anilist')}
-            className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 disabled:opacity-70 text-white font-semibold px-4 py-3 text-sm transition-all backdrop-blur-md cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl border border-slate-900/15 bg-slate-900/85 hover:bg-slate-900 active:scale-[0.98] disabled:opacity-70 text-white font-semibold px-4 py-3 text-sm transition-all cursor-pointer"
           >
             <AniListIcon className="h-5 w-5 rounded" />
             Continue with AniList
           </button>
         </div>
-        </div>
       </div>
 
       {/* Smooth Connecting Overlay */}
       {connecting && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-slate-950/85 backdrop-blur-xl p-6">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-slate-950/85 backdrop-blur-xl p-6 text-slate-100">
           <MiruSyncLogo className="h-14 w-14 animate-pulse" />
-          <div className="flex items-center gap-2.5 text-sm font-medium text-slate-200">
+          <div className="flex items-center gap-2.5 text-sm font-medium">
             <span className="h-4 w-4 rounded-full border-2 border-sky-400 border-t-transparent animate-spin" />
             Connecting to {connecting === 'mal' ? 'MyAnimeList' : 'AniList'}…
           </div>
           <button
             type="button"
             onClick={() => setConnecting(null)}
-            className="mt-2 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 px-4 py-2 text-xs font-medium text-slate-200 cursor-pointer"
+            className="mt-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-xs font-medium text-slate-200 cursor-pointer"
           >
             Cancel
           </button>

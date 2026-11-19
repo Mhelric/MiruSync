@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Compass, Download, Home, Search, Settings, Tv, User } from 'lucide-react';
 import { useAuthStore } from '@mirusync/core';
 import { AniListIcon, MalIcon, MiruSyncLogo } from '../components/BrandIcons';
+import { MobileQuickSearchModal } from '../components/MobileQuickSearchModal';
 import { openUpdateModal, useUpdateState } from '../lib/updateStore';
 
 const TABS = [
@@ -28,6 +29,7 @@ export function MobileLayout({
   const navigate = useNavigate();
   const session = useAuthStore((s) => s.session);
   const { updateInfo } = useUpdateState();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
@@ -76,9 +78,9 @@ export function MobileLayout({
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => navigate('/discover?tab=search')}
+              onClick={() => setSearchOpen(true)}
               aria-label="Search"
-              className="h-9 w-9 rounded-xl border border-slate-800/90 bg-slate-900/75 flex items-center justify-center text-slate-300 active:scale-95 transition-transform cursor-pointer"
+              className="h-9 w-9 rounded-xl border border-slate-800/90 bg-slate-900/75 flex items-center justify-center text-slate-300 active:scale-90 transition-transform cursor-pointer"
             >
               <Search className="h-4 w-4" />
             </button>
@@ -147,7 +149,7 @@ export function MobileLayout({
                       : 'text-slate-400 active:scale-95'
                   }`}
                 >
-                  <Icon className={`h-4 w-4 ${active ? 'scale-110' : ''} transition-transform`} />
+                  <Icon className={`h-4 w-4 transition-transform ${active ? 'scale-110 animate-icon-pop' : ''}`} />
                   <span>{label}</span>
                 </button>
               );
@@ -155,6 +157,8 @@ export function MobileLayout({
           </div>
         </nav>
       )}
+
+      <MobileQuickSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }

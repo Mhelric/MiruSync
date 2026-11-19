@@ -9,13 +9,56 @@
   scrollbar-width: none;
 }
 
-@keyframes ken-burns {
-  0% { transform: scale(1) translate3d(0, 0, 0); }
-  100% { transform: scale(1.08) translate3d(-1%, -1%, 0); }
+@keyframes float-idle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-2.5px) rotate(3deg); }
 }
 
-.animate-ken-burns {
-  animation: ken-burns 12s ease-out forwards;
+@keyframes icon-pop {
+  0% { transform: scale(0.9); }
+  55% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.animate-float-idle {
+  animation: float-idle 3.2s ease-in-out infinite;
+}
+
+.animate-icon-pop {
+  animation: icon-pop 240ms ease-out;
+}
+
+/* White MS logo variant in light mode */
+html.light .ms-logo-bg {
+  fill: #ffffff !important;
+}
+html.light .ms-logo-m {
+  stroke: #0f172a !important;
+}
+
+/* Appearance customizations: Text Scale, Radius, Card Style */
+html[data-text-scale="compact"] {
+  font-size: 14.5px;
+}
+html[data-text-scale="large"] {
+  font-size: 17.5px;
+}
+
+html[data-radius="sharp"] .rounded-3xl { border-radius: 0.75rem !important; }
+html[data-radius="sharp"] .rounded-2xl { border-radius: 0.5rem !important; }
+html[data-radius="sharp"] .rounded-xl { border-radius: 0.375rem !important; }
+
+html[data-card-style="glass"] .bg-slate-900\/60,
+html[data-card-style="glass"] .bg-slate-900\/50,
+html[data-card-style="glass"] .bg-slate-900\/70 {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+html[data-card-style="solid"] .backdrop-blur-xl,
+html[data-card-style="solid"] .backdrop-blur-md {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* GitHub-style activity heatmap levels */
@@ -37,50 +80,58 @@ html.light .gh-cell-2 { background-color: #40c463 !important; }
 html.light .gh-cell-3 { background-color: #30a14e !important; }
 html.light .gh-cell-4 { background-color: #216e39 !important; }
 
-/* Soft Slate light theme overrides when html.light is active */
+/* White-themed glassmorphism & soft slate light mode overrides */
 html.light body,
 html.light .bg-slate-950,
 html.light .bg-slate-950\/85,
 html.light .bg-slate-950\/80,
+html.light .bg-slate-950\/75,
 html.light .bg-slate-950\/70 {
-  background-color: #dce2ec !important;
-  color: #111827 !important;
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 
 html.light .bg-slate-900,
 html.light .bg-slate-900\/95,
 html.light .bg-slate-900\/90,
 html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/75,
 html.light .bg-slate-900\/70,
 html.light .bg-slate-900\/60,
-html.light .bg-slate-900\/50 {
-  background-color: #eef2f7 !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+html.light .bg-slate-900\/50,
+html.light .bg-slate-900\/40 {
+  background-color: rgba(255, 255, 255, 0.78) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.07);
 }
 
 html.light .bg-slate-800,
 html.light .bg-slate-800\/90,
 html.light .bg-slate-800\/80,
 html.light .bg-slate-950\/60 {
-  background-color: #d0d8e4 !important;
+  background-color: rgba(241, 245, 249, 0.9) !important;
 }
 
 html.light .text-slate-50,
 html.light .text-slate-100,
 html.light .text-slate-200 {
-  color: #111827 !important;
+  color: #0f172a !important;
 }
 
-html.light .text-slate-300 { color: #293548 !important; }
+html.light .text-slate-300 { color: #334155 !important; }
 html.light .text-slate-400,
 html.light .text-slate-500 { color: #475569 !important; }
 
 html.light .border-slate-800,
 html.light .border-slate-800\/80,
+html.light .border-slate-800\/90,
 html.light .border-slate-700,
+html.light .border-slate-700\/80,
 html.light .border-white\/10,
-html.light .border-white\/15 {
-  border-color: #b9c4d4 !important;
+html.light .border-white\/15,
+html.light .border-white\/20 {
+  border-color: rgba(148, 163, 184, 0.42) !important;
 }
 
 html.light .text-sky-300,
@@ -90,13 +141,13 @@ html.light .text-emerald-400 { color: #047857 !important; }
 html.light .text-rose-300,
 html.light .text-rose-400 { color: #be123c !important; }
 html.light .text-amber-300,
-html.light .text-amber-400 { color: #92400e !important; }
+html.light .text-amber-400 { color: #b45309 !important; }
 html.light .text-indigo-300,
 html.light .text-indigo-400 { color: #3730a3 !important; }
 
 html.light .hero-banner {
   background-color: #0f172a !important;
-  border-color: #334155 !important;
+  border-color: rgba(148, 163, 184, 0.4) !important;
 }
 html.light .hero-banner .text-white { color: #ffffff !important; }
 html.light .hero-banner .text-slate-300 { color: #e2e8f0 !important; }

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, LogOut, Sparkles, Star, Tv } from 'lucide-react';
+import { BookOpen, Sparkles, Star, Tv } from 'lucide-react';
 import {
   formatMediaTitle,
   useAuthStore,
@@ -11,11 +11,10 @@ import {
 } from '@mirusync/core';
 import { MobileLayout } from '../layouts/MobileLayout';
 import { AniListIcon, MalIcon } from '../components/BrandIcons';
-import { API_BASE, saveMobileSession } from '../lib/mobileAuth';
+import { API_BASE } from '../lib/mobileAuth';
 
 export function MobileProfilePage() {
   const session = useAuthStore((s) => s.session);
-  const setSession = useAuthStore((s) => s.setSession);
   const titleLang = useSettingsStore((s) => s.settings.title_language);
   const shortTitles = useLocalPrefsStore((s) => s.shortTitles);
 
@@ -64,11 +63,6 @@ export function MobileProfilePage() {
     return item.id;
   }
 
-  function handleSignOut() {
-    saveMobileSession(null);
-    setSession(null);
-  }
-
   return (
     <MobileLayout title="Profile">
       <div className="space-y-5">
@@ -107,14 +101,6 @@ export function MobileProfilePage() {
                   ) : (
                     <AniListIcon className="h-4 w-4 rounded-[4px] shrink-0" />
                   )}
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-[11px] font-medium text-rose-300 cursor-pointer"
-                  >
-                    <LogOut className="h-3 w-3" />
-                    Sign Out
-                  </button>
                 </div>
 
                 {profileDetails?.about && (

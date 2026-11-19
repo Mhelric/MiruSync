@@ -11,7 +11,7 @@ export function MiruSyncLogo({ className = 'h-8 w-8' }: { className?: string }) 
           <stop offset="100%" stopColor="#818cf8" />
         </linearGradient>
       </defs>
-      <rect width="64" height="64" rx="16" fill="#090d1a" />
+      <rect width="64" height="64" rx="16" fill="#090d1a" className="ms-logo-bg transition-colors" />
       <rect
         x="2"
         y="2"
@@ -25,6 +25,7 @@ export function MiruSyncLogo({ className = 'h-8 w-8' }: { className?: string }) 
       <path
         d="M12 43V21L21 34L30 21V43"
         stroke="#F8FAFC"
+        className="ms-logo-m transition-colors"
         strokeWidth="5"
         strokeLinecap="round"
         strokeLinejoin="round"

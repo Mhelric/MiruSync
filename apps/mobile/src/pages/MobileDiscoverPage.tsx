@@ -73,6 +73,16 @@ const POPULAR_TAGS = [
   'Seinen',
 ];
 
+const SEASONS = ['WINTER', 'SPRING', 'SUMMER', 'FALL'];
+const ANIME_FORMATS = ['TV', 'MOVIE', 'OVA', 'ONA', 'SPECIAL'];
+const MANGA_FORMATS = ['MANGA', 'NOVEL', 'ONE_SHOT'];
+const STATUSES = [
+  { value: 'RELEASING', label: 'Airing / Releasing' },
+  { value: 'FINISHED', label: 'Finished' },
+  { value: 'NOT_YET_RELEASED', label: 'Upcoming' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+];
+
 export function MobileDiscoverPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = (searchParams.get('tab') as DiscoverTab) || 'popular';
@@ -94,6 +104,12 @@ export function MobileDiscoverPage() {
   const [query, setQuery] = useState('');
   const [genre, setGenre] = useState('');
   const [tag, setTag] = useState('');
+  const [format, setFormat] = useState('');
+  const [status, setStatus] = useState('');
+  const [minScore, setMinScore] = useState('');
+  const [season, setSeason] = useState('');
+  const [year, setYear] = useState('');
+  const [showAdvFilters, setShowAdvFilters] = useState(false);
   const [sort, setSort] = useState<SearchSort>('POPULARITY_DESC');
   const [includeAdult, setIncludeAdult] = useState(showAdult);
 
@@ -131,9 +147,14 @@ export function MobileDiscoverPage() {
       type: mediaType,
       genre: genre || undefined,
       tag: tag.trim() || undefined,
+      format: format || undefined,
+      status: status || undefined,
+      minScore: minScore ? Number(minScore) : undefined,
+      season: mediaType === 'ANIME' && season ? season : undefined,
+      year: year ? Number(year) : undefined,
       sort,
       includeAdult,
-      perPage: 20,
+      perPage: 24,
     },
     API_BASE
   );
@@ -453,7 +474,11 @@ export function MobileDiscoverPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setMediaType((t) => (t === 'ANIME' ? 'MANGA' : 'ANIME'))}
+                onClick={() => {
+                  setMediaType((t) => (t === 'ANIME' ? 'MANGA' : 'ANIME'));
+                  setFormat('');
+                  setSeason('');
+                }}
                 className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-mono text-sky-400 cursor-pointer"
               >
                 {mediaType}
@@ -506,6 +531,18 @@ export function MobileDiscoverPage() {
                 <option value="START_DATE_DESC">Sort: Newest</option>
               </select>
 
+              <button
+                type="button"
+                onClick={() => setShowAdvFilters((v) => !v)}
+                className={`rounded-xl border px-3 py-2 text-xs font-medium cursor-pointer ${
+                  showAdvFilters || format || status || minScore || season || year
+                    ? 'border-sky-500/40 bg-sky-500/15 text-sky-300'
+                    : 'border-slate-800 bg-slate-900/70 text-slate-300'
+                }`}
+              >
+                More
+              </button>
+
               <label className="inline-flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-xs text-slate-300 cursor-pointer">
                 <input
                   type="checkbox"
@@ -515,6 +552,78 @@ export function MobileDiscoverPage() {
                 />
                 18+
               </label>
+            </div>
+
+            <div
+              className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                showAdvFilters ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  <select
+                    value={format}
+                    onChange={(e) => setFormat(e.target.value)}
+                    className="rounded-xl border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-200"
+                  >
+                    <option value="">All Formats</option>
+                    {(mediaType === 'ANIME' ? ANIME_FORMATS : MANGA_FORMATS).map((f) => (
+                      <option key={f} value={f}>
+                        {f}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="rounded-xl border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-200"
+                  >
+                    <option value="">Any Status</option>
+                    {STATUSES.map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={minScore}
+                    onChange={(e) => setMinScore(e.target.value)}
+                    className="rounded-xl border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-200"
+                  >
+                    <option value="">Any Score</option>
+                    <option value="60">Score 60%+</option>
+                    <option value="70">Score 70%+</option>
+                    <option value="80">Score 80%+</option>
+                    <option value="90">Score 90%+</option>
+                  </select>
+
+                  <select
+                    value={season}
+                    onChange={(e) => setSeason(e.target.value)}
+                    disabled={mediaType === 'MANGA'}
+                    className="rounded-xl border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-200 disabled:opacity-40"
+                  >
+                    <option value="">Any Season</option>
+                    {SEASONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+
+                  <input
+                    type="number"
+                    min={1960}
+                    max={2030}
+                    value={year}
+                    onChange={(e) => setYear(e.target.value)}
+                    placeholder="Year (e.g. 2025)"
+                    className="col-span-2 rounded-xl border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-100 placeholder:text-slate-500"
+                  />
+                </div>
+              </div>
             </div>
 
             {recentSearches.length > 0 && (
@@ -539,7 +648,7 @@ export function MobileDiscoverPage() {
               </div>
             )}
 
-            {!query.trim() && !genre && !tag.trim() ? (
+            {!query.trim() && !genre && !tag.trim() && !format && !status && !minScore && !season && !year ? (
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 text-center text-xs text-slate-400">
                 Type a title, pick a genre, or enter a tag to search.
               </div>
