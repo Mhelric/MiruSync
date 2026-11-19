@@ -6,42 +6,45 @@ import { startMobileOAuth } from '../lib/mobileAuth';
 import { openUpdateModal, useUpdateState } from '../lib/updateStore';
 
 const SCENES = [
-  { title: 'Frieren', gifUrl: '/scenes/frieren.gif' },
-  { title: 'One Piece', gifUrl: '/scenes/onepiece.gif' },
-  { title: 'Vinland Saga', gifUrl: '/scenes/vinland.gif' },
-  { title: 'Attack on Titan', gifUrl: '/scenes/aot.gif' },
-  { title: 'Jujutsu Kaisen', gifUrl: '/scenes/jjk.gif' },
-  { title: 'Demon Slayer', gifUrl: '/scenes/demonslayer.gif' },
-  { title: 'My Hero Academia', gifUrl: '/scenes/mha.gif' },
-  { title: 'Fullmetal Alchemist', gifUrl: '/scenes/fmab.gif' },
-  { title: 'Deku', gifUrl: '/scenes/deku.jpg' },
-  { title: 'KonoSuba', gifUrl: '/scenes/konosuba.jpg' },
-  { title: 'Kimi ni Todoke', gifUrl: '/scenes/kiminitodoke.jpg' },
-  { title: 'Haikyu!!', gifUrl: '/scenes/haikyuu.jpg' },
-  { title: 'Dandadan', gifUrl: '/scenes/dandadan.jpg' },
-  { title: 'Gurren Lagann', gifUrl: '/scenes/gurrenlagann.jpg' },
-  { title: 'Dr. Stone', gifUrl: '/scenes/drstone.png' },
-  { title: 'Solo Leveling', gifUrl: '/scenes/scene8.jpg' },
-  { title: 'Black Clover', gifUrl: '/scenes/blackclover.jpg' },
-  { title: 'Naruto & Sasuke', gifUrl: '/scenes/kurama_susanoo.jpg' },
+  { title: 'Frieren', gifUrl: '/scenes/frieren.gif', durationMs: 2200 },
+  { title: 'One Piece', gifUrl: '/scenes/onepiece.gif', durationMs: 4600 },
+  { title: 'Vinland Saga', gifUrl: '/scenes/vinland.gif', durationMs: 1400 },
+  { title: 'Attack on Titan', gifUrl: '/scenes/aot.gif', durationMs: 5500 },
+  { title: 'Jujutsu Kaisen', gifUrl: '/scenes/jjk.gif', durationMs: 7260 },
+  { title: 'Demon Slayer', gifUrl: '/scenes/demonslayer.gif', durationMs: 3200 },
+  { title: 'My Hero Academia', gifUrl: '/scenes/mha.gif', durationMs: 1800 },
+  { title: 'Fullmetal Alchemist', gifUrl: '/scenes/fmab.gif', durationMs: 2500 },
+  { title: 'Black Clover', gifUrl: '/scenes/asta-swordofthewizardking.gif', durationMs: 4010 },
+  { title: 'Dandadan', gifUrl: '/scenes/dandadan.gif', durationMs: 5600 },
+  { title: 'Deku', gifUrl: '/scenes/deku-mha.gif', durationMs: 1560 },
+  { title: 'Dr. Stone', gifUrl: '/scenes/dr-stone-tsukasa.gif', durationMs: 3810 },
+  { title: 'Gurren Lagann', gifUrl: '/scenes/gurren-lagann-simon.gif', durationMs: 1900 },
+  { title: 'Haikyu!!', gifUrl: '/scenes/haikyuu-anime.gif', durationMs: 2000 },
+  { title: 'Kimi ni Todoke', gifUrl: '/scenes/hold-close-comfurt-anime.gif', durationMs: 1760 },
+  { title: 'KonoSuba', gifUrl: '/scenes/megumin-thumbs-up.gif', durationMs: 3000 },
+  { title: 'Naruto & Sasuke', gifUrl: '/scenes/naruto-sasuke.gif', durationMs: 1600 },
+  { title: 'Solo Leveling', gifUrl: '/scenes/solo-leveling-statue-smile-solo-leveling.gif', durationMs: 3100 },
 ];
 
 export function MobileWelcomePage() {
   const [sceneIdx, setSceneIdx] = useState(() => Math.floor(Math.random() * SCENES.length));
+  const [playCount, setPlayCount] = useState(0);
   const [connecting, setConnecting] = useState<'mal' | 'anilist' | null>(null);
   const { updateInfo } = useUpdateState();
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const duration = SCENES[sceneIdx]?.durationMs ?? 3000;
+    const timer = setTimeout(() => {
       setSceneIdx((prev) => {
         if (SCENES.length <= 1) return 0;
         let next = Math.floor(Math.random() * SCENES.length);
         if (next === prev) next = (prev + 1) % SCENES.length;
         return next;
       });
-    }, 8000);
-    return () => clearInterval(timer);
-  }, []);
+      setPlayCount((c) => c + 1);
+    }, duration);
+    return () => clearTimeout(timer);
+  }, [sceneIdx, playCount]);
 
   useEffect(() => {
     const sub = Browser.addListener('browserFinished', () => {
@@ -81,18 +84,14 @@ export function MobileWelcomePage() {
 
       {/* Full-Screen Crisp Unblurred Anime Scene Background */}
       <div className="fixed inset-0 z-0 overflow-hidden bg-slate-950" aria-hidden="true">
-        {SCENES.map((scene, idx) => (
-          <img
-            key={scene.title}
-            src={scene.gifUrl}
-            alt={scene.title}
-            decoding="async"
-            className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ${
-              idx === sceneIdx ? 'opacity-100' : 'opacity-0'
-            }`}
-            style={{ imageRendering: 'auto' }}
-          />
-        ))}
+        <img
+          key={`${SCENES[sceneIdx].gifUrl}-${playCount}`}
+          src={SCENES[sceneIdx].gifUrl}
+          alt={SCENES[sceneIdx].title}
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+          style={{ imageRendering: 'auto' }}
+        />
         {/* Light radial vignette so the crisp GIF stays vivid & visible */}
         <div
           className="absolute inset-0"
