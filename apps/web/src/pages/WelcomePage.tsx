@@ -39,13 +39,16 @@ const SCENES: SceneSlide[] = [
   { id: 'sololeveling', title: 'Solo Leveling', gifUrl: '/scenes/solo-leveling-statue-smile-solo-leveling.gif', durationMs: 3100 },
 ];
 
-function pickRandomIndex(exclude?: number): number {
-  if (SCENES.length <= 1) return 0;
-  let next = Math.floor(Math.random() * SCENES.length);
-  if (exclude !== undefined && next === exclude) {
-    next = (next + 1) % SCENES.length;
+function buildShuffledQueue(length: number, excludeFirst?: number): number[] {
+  const arr = Array.from({ length }, (_, i) => i);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-  return next;
+  if (excludeFirst !== undefined && arr.length > 1 && arr[0] === excludeFirst) {
+    [arr[0], arr[1]] = [arr[1], arr[0]];
+  }
+  return arr;
 }
 
 const APK_DOWNLOAD_URL =
@@ -55,11 +58,14 @@ export function WelcomePage() {
   const [searchParams] = useSearchParams();
   const authError = searchParams.get('auth_error');
 
-  const [activeIndex, setActiveIndex] = useState(() => pickRandomIndex());
+  const [queue, setQueue] = useState<number[]>(() => buildShuffledQueue(SCENES.length));
   const [prevIndex, setPrevIndex] = useState<number | null>(null);
-  const [nextIndex, setNextIndex] = useState(() => pickRandomIndex(activeIndex));
   const [playCount, setPlayCount] = useState(0);
+  const [loaded, setLoaded] = useState(true);
   const [connectingProvider, setConnectingProvider] = useState<'mal' | 'anilist' | null>(null);
+
+  const activeIndex = queue[0] ?? 0;
+  const nextIndex = queue[1] ?? 0;
 
   useEffect(() => {
     const preload = new Image();
@@ -68,8 +74,11 @@ export function WelcomePage() {
     const duration = SCENES[activeIndex]?.durationMs ?? 3000;
     const timer = setTimeout(() => {
       setPrevIndex(activeIndex);
-      setActiveIndex(nextIndex);
-      setNextIndex(pickRandomIndex(nextIndex));
+      setLoaded(false);
+      setQueue((prev) => {
+        const rest = prev.slice(1);
+        return rest.length >= 2 ? rest : [...rest, ...buildShuffledQueue(SCENES.length, rest[0] ?? activeIndex)];
+      });
       setPlayCount((c) => c + 1);
     }, duration);
     return () => clearTimeout(timer);
@@ -98,7 +107,10 @@ export function WelcomePage() {
           key={`${SCENES[activeIndex].gifUrl}-${playCount}`}
           src={SCENES[activeIndex].gifUrl}
           alt={SCENES[activeIndex].title}
-          className="absolute inset-0 h-full w-full object-cover scale-105"
+          onLoad={() => setLoaded(true)}
+          className={`absolute inset-0 h-full w-full object-cover scale-105 transition-opacity duration-700 ease-in-out ${
+            loaded ? 'opacity-100' : 'opacity-0'
+          }`}
         />
         {/* Vignette & contrast gradient */}
         <div
