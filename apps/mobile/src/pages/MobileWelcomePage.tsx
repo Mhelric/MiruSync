@@ -13,18 +13,23 @@ const SCENES = [
   { title: 'Attack on Titan', gifUrl: '/scenes/aot.gif' },
   { title: 'Jujutsu Kaisen', gifUrl: '/scenes/jjk.gif' },
   { title: 'Demon Slayer', gifUrl: '/scenes/demonslayer.gif' },
-  { title: 'Solo Leveling', gifUrl: '/scenes/sololeveling.gif' },
+  { title: 'My Hero Academia', gifUrl: '/scenes/mha.gif' },
   { title: 'Fullmetal Alchemist', gifUrl: '/scenes/fmab.gif' },
 ];
 
 export function MobileWelcomePage() {
-  const [sceneIdx, setSceneIdx] = useState(0);
+  const [sceneIdx, setSceneIdx] = useState(() => Math.floor(Math.random() * SCENES.length));
   const [connecting, setConnecting] = useState<'mal' | 'anilist' | null>(null);
   const { updateInfo } = useUpdateState();
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setSceneIdx((prev) => (prev + 1) % SCENES.length);
+      setSceneIdx((prev) => {
+        if (SCENES.length <= 1) return 0;
+        let next = Math.floor(Math.random() * SCENES.length);
+        if (next === prev) next = (prev + 1) % SCENES.length;
+        return next;
+      });
     }, 8000);
     return () => clearInterval(timer);
   }, []);

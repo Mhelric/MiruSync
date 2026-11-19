@@ -37,6 +37,7 @@ import { MobileDiscoverPage } from './pages/MobileDiscoverPage';
 import { MobileProfilePage } from './pages/MobileProfilePage';
 import { MobileMediaDetailPage } from './pages/MobileMediaDetailPage';
 import { MobileSettingsPage } from './pages/MobileSettingsPage';
+import { MiruSyncLogo } from './components/BrandIcons';
 
 const FALLBACK_APP_VERSION =
   (import.meta.env.VITE_APP_VERSION as string | undefined) || '1.1.0';
@@ -59,13 +60,67 @@ function isNewerVersion(remote: string, local: string): boolean {
   return false;
 }
 
+const QUERY_CACHE_KEY = 'mirusync_mobile_query_cache_v1';
+const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000,
+      gcTime: QUERY_CACHE_MAX_AGE_MS,
     },
   },
+});
+
+function hydrateQueryCache(client: QueryClient) {
+  try {
+    const raw = localStorage.getItem(QUERY_CACHE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as {
+      ts: number;
+      entries: Array<{ queryKey: unknown[]; data: unknown; dataUpdatedAt: number }>;
+    };
+    if (!parsed?.ts || Date.now() - parsed.ts > QUERY_CACHE_MAX_AGE_MS) return;
+    for (const entry of parsed.entries || []) {
+      if (Array.isArray(entry.queryKey) && entry.data !== undefined) {
+        client.setQueryData(entry.queryKey, entry.data, {
+          updatedAt: entry.dataUpdatedAt || parsed.ts,
+        });
+      }
+    }
+  } catch {
+    // Ignore corrupt cache
+  }
+}
+
+hydrateQueryCache(queryClient);
+
+let saveCacheTimer: ReturnType<typeof setTimeout> | null = null;
+queryClient.getQueryCache().subscribe((event) => {
+  if (event?.type !== 'updated' || event.query.state.status !== 'success') return;
+  if (saveCacheTimer) clearTimeout(saveCacheTimer);
+  saveCacheTimer = setTimeout(() => {
+    try {
+      const entries = queryClient
+        .getQueryCache()
+        .getAll()
+        .filter((q) => q.state.status === 'success' && q.state.data !== undefined)
+        .slice(0, 40)
+        .map((q) => ({
+          queryKey: q.queryKey,
+          data: q.state.data,
+          dataUpdatedAt: q.state.dataUpdatedAt,
+        }));
+      localStorage.setItem(
+        QUERY_CACHE_KEY,
+        JSON.stringify({ ts: Date.now(), entries })
+      );
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, 500);
 });
 
 const MOBILE_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
@@ -113,6 +168,7 @@ function MobileRoutes() {
   const setSession = useAuthStore((s) => s.setSession);
   const { updateInfo, modalOpen } = useUpdateState();
   const [confirmExit, setConfirmExit] = useState(false);
+  const [booting, setBooting] = useState(true);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -148,6 +204,7 @@ function MobileRoutes() {
 
   useEffect(() => {
     setSession(loadMobileSession());
+    const bootTimer = setTimeout(() => setBooting(false), 550);
 
     const sub = CapApp.addListener('appUrlOpen', async ({ url }) => {
       const exchanged = await exchangeMobileCallbackUrl(url);
@@ -198,11 +255,23 @@ function MobileRoutes() {
 
     return () => {
       cancelled = true;
+      clearTimeout(bootTimer);
       clearInterval(poll);
       void sub.then((handle) => handle.remove());
       void stateSub.then((handle) => handle.remove());
     };
   }, [setSession]);
+
+  if (booting) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col items-center justify-center gap-3">
+        <MiruSyncLogo className="h-16 w-16 animate-pulse" />
+        <span className="text-lg font-bold tracking-tight">
+          Miru<span className="text-sky-400">Sync</span>
+        </span>
+      </div>
+    );
+  }
 
   return (
     <>
