@@ -62,7 +62,17 @@ export function WelcomePage() {
   const [prevIndex, setPrevIndex] = useState<number | null>(null);
   const [playCount, setPlayCount] = useState(0);
   const [loaded, setLoaded] = useState(true);
+  const [apkVersion, setApkVersion] = useState('1.2.39');
   const [connectingProvider, setConnectingProvider] = useState<'mal' | 'anilist' | null>(null);
+
+  useEffect(() => {
+    fetch('/api/app-version')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { version?: string } | null) => {
+        if (data?.version) setApkVersion(data.version.replace(/^v/i, ''));
+      })
+      .catch(() => {});
+  }, []);
 
   const activeIndex = queue[0] ?? 0;
   const nextIndex = queue[1] ?? 0;
@@ -180,7 +190,7 @@ export function WelcomePage() {
               </span>
             </div>
             <span className="rounded-full bg-emerald-500/15 border border-emerald-400/25 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
-              v1.1
+              v{apkVersion}
             </span>
           </div>
           <p className="text-xs text-slate-300 leading-relaxed">
