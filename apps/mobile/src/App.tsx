@@ -1,9 +1,16 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App as CapApp } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-import { Download, Sparkles, X } from 'lucide-react';
+import { Download, LogOut, Sparkles, X } from 'lucide-react';
 import {
   useAuthStore,
   useMediaList,
@@ -85,10 +92,52 @@ function MobileBackgroundSync() {
   return null;
 }
 
+const MAIN_TAB_PATHS = new Set([
+  '/',
+  '/home',
+  '/anime',
+  '/manga',
+  '/discover',
+  '/profile',
+]);
+
 function MobileRoutes() {
   const session = useAuthStore((s) => s.session);
   const setSession = useAuthStore((s) => s.setSession);
   const { updateInfo, modalOpen } = useUpdateState();
+  const [confirmExit, setConfirmExit] = useState(false);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const pathRef = useRef(location.pathname);
+  const modalOpenRef = useRef(modalOpen);
+  const confirmExitRef = useRef(confirmExit);
+
+  pathRef.current = location.pathname;
+  modalOpenRef.current = modalOpen;
+  confirmExitRef.current = confirmExit;
+
+  useEffect(() => {
+    const backSub = CapApp.addListener('backButton', () => {
+      if (modalOpenRef.current) {
+        closeUpdateModal();
+        return;
+      }
+      if (confirmExitRef.current) {
+        setConfirmExit(false);
+        return;
+      }
+      if (!MAIN_TAB_PATHS.has(pathRef.current)) {
+        navigate(-1);
+        return;
+      }
+      setConfirmExit(true);
+    });
+
+    return () => {
+      void backSub.then((h) => h.remove());
+    };
+  }, [navigate]);
 
   useEffect(() => {
     setSession(loadMobileSession());
@@ -254,6 +303,47 @@ function MobileRoutes() {
                 className="w-full rounded-xl border border-slate-800 bg-slate-950/60 hover:bg-slate-800 py-2.5 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
               >
                 Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmExit && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-5"
+          onClick={() => setConfirmExit(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-3xl border border-white/15 bg-slate-900/95 p-5 shadow-2xl space-y-4 text-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="h-9 w-9 rounded-xl bg-rose-500/15 border border-rose-400/30 flex items-center justify-center shrink-0">
+                <LogOut className="h-4 w-4 text-rose-400" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white">Exit MiruSync?</h2>
+                <p className="text-xs text-slate-400">
+                  Are you sure you want to close the app?
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmExit(false)}
+                className="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 hover:bg-slate-800 py-2.5 text-xs font-medium text-slate-300 cursor-pointer"
+              >
+                Stay
+              </button>
+              <button
+                type="button"
+                onClick={() => void CapApp.exitApp()}
+                className="flex-1 rounded-xl bg-rose-500 hover:bg-rose-400 py-2.5 text-xs font-semibold text-white cursor-pointer"
+              >
+                Exit App
               </button>
             </div>
           </div>
